@@ -292,6 +292,7 @@ PRs and suggestions welcome. See CONTRIBUTING.md for coding conventions and desi
 ---
 
 ## License
-MIT © 2025 Kyle Scott
+rpgcampaignManager © 2025 by Kyle Scott is licensed
+under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
 
 ---
