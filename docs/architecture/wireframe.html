@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Campaign Manager</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      height: 100vh;
+      display: flex;
+    }
+
+    #sidebar {
+      width: 250px;
+      background-color: #1e1e1e;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    #main-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #top-display {
+      flex: 1;
+      padding: 10px;
+      background-color: #f0f0f0;
+      overflow-y: auto;
+      border-bottom: 2px solid #ccc;
+    }
+
+    #chat-section {
+      height: 300px;
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid #ccc;
+    }
+
+    #chat-log {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    #chat-input {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+
+    #chat-input textarea {
+      flex-grow: 1;
+      padding: 10px;
+      resize: none;
+      border: none;
+      outline: none;
+    }
+
+    #chat-input button {
+      padding: 10px;
+      border: none;
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+    }
+
+    .section-title {
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h2>Campaign Manager</h2>
+    <div class="section-title">Search</div>
+    <input type="text" placeholder="Search entities..." style="width: 100%; padding: 5px;">
+
+    <div class="section-title">Index Access</div>
+    <ul>
+      <li><a href="#">Entity Index</a></li>
+      <li><a href="#">Event Index</a></li>
+      <li><a href="#">Status Index</a></li>
+      <li><a href="#">Relationship Index</a></li>
+    </ul>
+
+    <div class="section-title">Assets</div>
+    <ul>
+      <li><a href="#">GM Assets</a></li>
+      <li><a href="#">Plot Lines</a></li>
+      <li><a href="#">Combat Mode</a></li>
+    </ul>
+  </div>
+
+  <div id="main-container">
+    <div id="top-display">
+      <!-- Markdown, images, or docs displayed here -->
+      <h3>Display Window</h3>
+      <p>This pane renders .md, .json, images, or entity previews.</p>
+    </div>
+
+    <div id="chat-section">
+      <div id="chat-log">
+        <p><strong>User:</strong> Who is Bethany?</p>
+        <p><strong>GPT:</strong> Bethany is a corrupted dryad aligned with Dream Rot...</p>
+      </div>
+      <div id="chat-input">
+        <textarea rows="3" placeholder="Type your message here..."></textarea>
+        <button>Send</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

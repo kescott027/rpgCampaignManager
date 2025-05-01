@@ -1,0 +1,8 @@
++-------------------------------+
+|      Display Window (Top)    |
+|-------------------------------|
+|     Chat Window (Bottom)     |
+| [Resizable] Input + Response |
++-------------------------------+
+| Sidebar: Search & Navigation |
++-------------------------------+

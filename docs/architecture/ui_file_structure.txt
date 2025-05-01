@@ -1,0 +1,8 @@
+/src
+├── components/
+│   ├── Sidebar.js
+│   ├── DisplayWindow.js
+│   ├── ChatSection.js
+│   ├── TabViewer.js
+├── App.js
+└── index.js

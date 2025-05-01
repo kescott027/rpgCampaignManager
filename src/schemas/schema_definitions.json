@@ -1,0 +1,35 @@
+{
+  "ENTITY": {
+    "Entity ID": "string (unique canonical name)",
+    "Entity Type": "string (one of: GM, Player, Player Character, Non Player Character, Group, Place, Thing)",
+    "Entity Aliases": "list of strings (alternate names or nicknames)",
+    "Entity Status": "list of strings (Status ID references in GM Mode)",
+    "Entity Relationships": "list of strings (Relationship ID references in GM Mode)"
+  },
+  "RELATIONSHIP": {
+    "Relationship ID": "string (20-character unique alphanumeric ID)",
+    "Relationship Principal": "string (Entity ID)",
+    "Relationship Description": "string (≤100 characters, past tense, uses [Entity] tags)",
+    "Relationship Related Entities": "list of strings (Entity IDs)",
+    "Relationship Tags": "list of strings (Principal first, then related entities, verbs, and conceptual tags)"
+  },
+  "STATUS": {
+    "Status Event ID": "string (must match an existing Event ID)",
+    "Status Principal": "string (Entity ID, or 'Orphan' if unresolved)",
+    "Status ID": "string (format: Status Principal:Status Event ID)",
+    "Status Related Entities": "list of strings (Entity IDs)",
+    "Status Description": "string (≤100 characters, past tense, uses [Entity] tags)",
+    "Status Active": "boolean (true if currently valid)",
+    "Status Tags": "list of strings (Principal first, then related, verbs, and concept tags)"
+  },
+  "EVENT": {
+    "Event Timestamp": "string (format yyyyMMdd:HH:mm:ss.SSS)",
+    "Event Description": "string (≤100 characters, past tense, uses [Entity] references)",
+    "Source": "string (one of: Campaign, Novel, Both)",
+    "Book": "integer (default 0 if unknown)",
+    "Chapter": "string (default 'Unspecified' if unknown)",
+    "Session": "string (campaign session label)",
+    "Index": "integer (incremented for uniqueness)",
+    "Event ID": "string (format: Source:Book:Chapter:Session:Timestamp:Index)"
+  }
+}

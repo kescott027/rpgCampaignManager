@@ -1,0 +1,67 @@
+body, html, .app-container {
+  margin: 0;
+  height: 100%;
+  display: flex;
+  font-family: sans-serif;
+}
+
+.sidebar {
+  width: 250px;
+  background: #2a2a2a;
+  color: #fff;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.section { margin-bottom: 20px; }
+
+.display-window {
+  background: #f4f4f4;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.chat-section {
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-log {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  background: #fafafa;
+}
+
+.chat-msg.user { color: #222; }
+.chat-msg.gpt { color: #007acc; }
+
+.chat-input {
+  display: flex;
+  border-top: 1px solid #ccc;
+}
+
+.chat-input textarea {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  resize: none;
+}
+
+.chat-input button {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+}
+
+.tab-bar button {
+  margin-right: 5px;
+}
+
+.active-tab {
+  font-weight: bold;
+  background: #ddd;
+}

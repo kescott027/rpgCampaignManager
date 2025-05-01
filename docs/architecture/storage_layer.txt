@@ -1,0 +1,12 @@
+CampaignManager/
+├── Entity_Index.json
+├── Event_Index.json
+├── Status_Index.json
+├── Relationship_Index.json
+├── GM_Assets/
+│   ├── Encounter_Planning/
+│   ├── Creature_Stat_Blocks/
+│   └── Plot_Lines/
+├── Cached_Sessions/
+├── Uploaded_Files/
+└── Logs/

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=67.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "campaign-manager"
+version = "0.1.0"
+description = "A modular ChatGPT-powered campaign control platform for TTRPG Game Masters."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "Your Name", email = "your@email.com" }
+]
+keywords = ["ttrpg", "game-master", "chatgpt", "campaign", "toolkit"]
+
+dependencies = [
+  "python-dotenv>=1.0.0",
+  "requests>=2.31.0",
+  "openai>=1.0.0",
+  "google-api-python-client>=2.105.0",
+  "google-auth>=2.24.0",
+  "google-auth-oauthlib>=1.2.0",
+  "markdown2>=2.4.12",
+  "PyYAML>=6.0.1",
+  "python-frontmatter>=1.0.0",
+  "jsonschema>=4.21.0",
+  "websocket-client>=1.7.0",
+  "black>=24.3.0",
+  "rich>=13.7.0",
+  "watchdog>=3.0.0"
+]
+
+[project.optional-dependencies]
+dev = ["pre-commit", "black", "flake8", "pylint", "pytest", "watchdog"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+include = '\.pyi?$'
+
+[tool.setuptools.packages.find]
+where = ["src"]

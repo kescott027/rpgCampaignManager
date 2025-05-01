@@ -1,0 +1,12 @@
+[User Input] → Parsing Engine → {
+  Command → File Handler / OBS / Combat Engine
+  Chat → ChatGPT Connector → GPT → Chat Window + File Save
+}
+
+[Chat Output / Index Updates] → File Handler → Google Drive
+
+[Sidebar Search] → Search Engine → Indexed JSONs + Memory
+
+[Asset Click] → File Viewer (Markdown/Image/Stats)
+
+[Combat Trigger] → Combat Engine (New GPT instance)

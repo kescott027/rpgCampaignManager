@@ -1,0 +1,29 @@
+# === Core Python Utilities ===
+python-dotenv>=1.0.0
+requests>=2.31.0
+fastapi>=0.115.12
+
+# === OpenAI / GPT Communication ===
+openai>=1.0.0
+
+# === Google Drive API Integration ===
+google-api-python-client>=2.105.0
+google-auth>=2.24.0
+google-auth-oauthlib>=1.2.0
+
+# === Markdown / YAML / JSON Utilities ===
+markdown2>=2.4.12
+PyYAML>=6.0.1
+python-frontmatter>=1.0.0
+jsonschema>=4.21.0
+
+# === OBS WebSocket Integration (optional) ===
+websocket-client>=1.7.0
+
+# === Development & Debugging Tools ===
+black>=24.3.0
+rich>=13.7.0
+watchdog>=3.0.0
+
+docx~=0.2.4
+graphviz~=0.20.3

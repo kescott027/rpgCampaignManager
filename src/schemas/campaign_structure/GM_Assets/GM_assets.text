@@ -1,0 +1,5 @@
+This folder will store a local cache for key indicies including:
+ENTITY index
+EVENT index
+RELATIONSHIP index
+STATUS index
