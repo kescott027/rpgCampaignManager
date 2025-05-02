@@ -28,7 +28,7 @@ rpgCampaignManager/
 │       ├── public/                 # HTML shell and static assets
 │       │   └── index.html
 │       ├── src/
-│       │   ├── index.js            # Entry point
+│       │   ├── index.html            # Entry point
 │       │   ├── App.js              # Main layout with SplitPane
 │       │   ├── App.css             # Global styles
 │       │   ├── components/
