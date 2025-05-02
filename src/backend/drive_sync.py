@@ -1,3 +1,4 @@
+
 import os
 import io
 import json
@@ -10,34 +11,66 @@ from google.auth.transport.requests import Request
 
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from google.oauth2 import service_account
 
 # === Constants ===
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
-ROOT_FOLDER_NAME = "CampaignManager"
-TOKEN_PATH = 'token.json'
+ROOT_FOLDER_NAME = "rpgCampaignManager"
+TOKEN_PATH = 'service_account.json'
 CREDENTIALS_PATH = 'credentials.json'
 
 
 class DriveSync:
-    def __init__(self):
+    def __init__(self, auth_method="service_account"):
         self.creds = None
         self.service = None
         self.root_folder_id = None
-        self.authenticate()
+        self.working_dir = os.getcwd()
+        self.authenticate(auth_method)
         self.ensure_root_folder()
 
-    def authenticate(self):
+    def service_account_auth(self, key_path='service_account.json'):
+        """
+        Authenticate using a service account JSON key.
+        Works only with Google Workspace Drive API (not personal accounts).
+        """
+        full_path = os.path.join(self.working_dir, key_path)
+        if not os.path.exists(full_path):
+            raise FileNotFoundError(f"Service account key file not found at: {full_path}")
+
+        creds = service_account.Credentials.from_service_account_file(
+            full_path,
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        self.creds = creds
+        self.service = build('drive', 'v3', credentials=self.creds)
+
+        # Optional: ensure root folder setup if needed
+        self.ensure_root_folder()
+
+        print("✅ Service account authentication successful.")
+
+    def user_auth(self):
         if os.path.exists(TOKEN_PATH):
             self.creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
         if not self.creds or not self.creds.valid:
             if self.creds and self.creds.expired and self.creds.refresh_token:
                 self.creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-                self.creds = flow.run_local_server(port=0)
-            with open(TOKEN_PATH, 'w') as token:
-                token.write(self.creds.to_json())
+        flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
+        self.creds = flow.run_local_server(port=0)
+
+        with open(TOKEN_PATH, 'w') as token:
+            token.write(self.creds.to_json())
         self.service = build('drive', 'v3', credentials=self.creds)
+
+        return
+
+    def authenticate(self, auth_method):
+        if auth_method == "service_account":
+            self.service_account_auth()
+        else:
+            self.user_auth()
+        return
 
     def ensure_root_folder(self):
         results = self.service.files().list(
