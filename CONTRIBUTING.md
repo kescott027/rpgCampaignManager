@@ -1,6 +1,9 @@
 # 🤝 Contributing to Campaign Manager
 
-Thank you for your interest in contributing to **Campaign Manager**, an AI-assisted TTRPG world management platform for Game Masters. This project relies on well-organized modularity, narrative integrity, and extensible tooling across the frontend and backend.
+Thank you for your interest in contributing to **Campaign Manager**, 
+an AI-assisted TTRPG world management platform for Game Masters. 
+This project relies on well-organized modularity, narrative integrity, 
+and extensible tooling across the frontend and backend.
 
 ---
 
@@ -21,13 +24,98 @@ Campaign Manager combines:
 2. **Clone** your fork locally:
    ```bash
    git clone https://github.com/yourname/campaign-manager.git
+   cd rpgCampaignManager
 
 3. Install dependencies:
 
 ```
+Prerequisites: 
+- Python 3.9+
+- Node.js 18+
+- Git
+- pip / virtualenv
+- npm or yarn
+- VSCode (recommended)
+
+install:
 npm install                      # Frontend
 pip install -r requirements.txt  # Backend
  ```
+###Frontend linting
+in /src/frontend:
+```bash
+npm install --save-dev prettier eslint # optional linting
+```
+
+### Node (inside frontend)
+cd src/frontend
+npm install
+###Create Local Files
+```.env``` — for GPT or Drive keys
+
+```token.json, credentials.json``` — for OAuth or service accounts
+
+##💻 Developer Workflow (VSCode Recommended)
+This project includes built-in VSCode support:
+
+###▶ Run Tasks
+Use Ctrl+Shift+P → Tasks: Run Task to access:
+
+- 📦 Install Python Requirements
+- 📦 Install Node Modules (Frontend)
+- 🧪 Run Backend Tests (pytest)
+- 🎨 Format Python (black)
+- 🧹 Run Pre-commit Checks
+- 🌐 Start Frontend (React Dev Server)
+
+###🧠 Debugging
+From the debug sidebar (Ctrl+Shift+D), use:
+- Backend API (FastAPI)
+- Run Full App (Launcher)
+- Run drive_sync.py
+- Launch React Frontend
+
+##✅ Code Standards
+###Python
+- Linted with flake8 + pylint
+- Formatted with black
+- Tests run via pytest
+
+###JavaScript/React
+- Use functional components with hooks
+- Tests via Jest and @testing-library/react
+
+##🔒 Security
+All commits are scanned with detect-secrets. If a secret is detected:
+1. Rotate or delete the key
+2. Use .env or credential vaults instead
+3. Run:
+```bash
+detect-secrets scan > .secrets.baseline
+pre-commit run --all-files
+```
+##🧪 Testing
+###Python
+```bash
+pytest src/backend/tests
+```
+###Frontend (React)
+
+
+###💡 Optional: Auto-Fix on Save
+You can enable auto-formatting on save in VSCode:
+1. Press Ctrl+Shift+P → Preferences: Open Settings (UI)
+2. Search for: Format On Save
+3. Enable ✅ for Python
+
+###To activate it in VSCode:
+
+Install the extension: “EditorConfig for VSCode”
+
+No further setup needed — it will automatically apply on file open/save
+
+###
+npm install --save-dev prettier eslint
 ## 🧱 Project Structure
 ```
 /src
@@ -42,6 +130,7 @@ pip install -r requirements.txt  # Backend
 ├── obs_controller.py     # OBS scene switching
 /tests/                   # Unit + integration tests
 ```
+
 ##📐 Contribution Types
 ###✅ Code Contributions
 React components (modular and theme-friendly)
@@ -102,5 +191,11 @@ Open an issue for discussion or feature requests.
 
 Use GitHub Discussions for narrative design ideas.
 
+##🙏 Thank You
+We appreciate your ideas, contributions, and feedback. Please feel free to submit a pull request, open an issue, or reach out with suggestions.
+
+Let’s build something awesome!
+
 ## 📄 License
 By contributing, you agree that your work may be licensed under the MIT License.
+

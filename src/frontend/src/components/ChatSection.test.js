@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ChatSection from '../ChatSection';
+import ChatSection from 'components/ChatSection';
 
 describe('ChatSection', () => {
   test('renders initial messages from state', () => {
