@@ -6,10 +6,11 @@
     "setupFilesAfterEnv": [
       "@testing-library/jest-dom/extend-expect",
       "<rootDir>/src/setupTests.js"
-    ],
+    ]
   },
   "scripts": {
     "test": "react-scripts test",
-    "format": "./format.sh"
+    "format": "prettier --write \"src/**/*.{js,jsx,json,css,md}\"",
+    "lint": "eslint ./src"
   }
 }

@@ -1,7 +1,7 @@
 # === Campaign Manager Security and Local Caches ===
 /security/
-/assets/
-assets/my_campaigns/
+/src/backend/assets/
+src/backend/assets/my_campaigns/
 
 #  ==== dont track secrets ===
 .env

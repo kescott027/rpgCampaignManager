@@ -174,6 +174,40 @@ Git
 Google Drive API + OpenAI API credentials (see .env section)
 
 ---
+## 🔧 VSCode Integration.
+
+🧑‍💻 Developer Environment (VSCode Tasks & Launch)
+This project includes a set of pre-configured Visual Studio Code tasks and launch profiles to streamline development.
+
+▶️ Quick Start
+Open the project in VSCode
+
+Hit Ctrl+Shift+P → "Tasks: Run Task"
+
+Select from:
+
+
+Task Label	Description
+📦 Install Python Requirements	Installs backend dependencies via pip
+📦 Install Node Modules (Frontend)	Installs React dependencies via npm install
+🧪 Run Backend Tests (pytest)	Runs unit tests in src/backend/tests
+🎨 Format Python (black)	Formats code in src/backend
+🧹 Run Pre-commit Checks	Runs all lint/tests configured in hooks
+🌐 Start Frontend (React Dev Server)	Runs npm start in src/frontend/
+🧠 Launch Profiles
+From the debug panel (Ctrl+Shift+D), you can also launch and debug:
+
+🧠 Backend API (FastAPI) — with hot reload
+
+🚀 Run Full App (Launcher) — backend + React + browser
+
+🧪 Run drive_sync.py — test Google Drive logic
+
+🌐 Launch React Frontend — run/debug React dev server
+
+💡 Optional Automation: Developers may configure black or pre-commit to run automatically on save or on Git commit via .editorconfig or pre-commit hooks.
+
+---
 
 ## 🚦 Continuous Integration (CI/CD)
 Campaign Manager uses GitHub Actions to automatically validate code on every push and pull request. This ensures a stable, consistent, and error-free development flow.

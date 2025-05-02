@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import SplitPane from 'react-split-pane';
 import Sidebar from './src/components/Sidebar';
-import DisplayWindow from './src/components/DisplayWindow';
+import DisplayWindow from './components/DisplayWindow';
 import ChatSection from './src/components/ChatSection';
 import './App.css';
 

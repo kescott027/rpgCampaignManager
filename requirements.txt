@@ -3,6 +3,7 @@ python-dotenv>=1.0.0
 requests>=2.31.0
 fastapi>=0.115.12
 
+
 # === OpenAI / GPT Communication ===
 openai>=1.0.0
 
@@ -21,9 +22,11 @@ jsonschema>=4.21.0
 websocket-client>=1.7.0
 
 # === Development & Debugging Tools ===
-black>=24.3.0
-rich>=13.7.0
+# rich>=13.7.0
 watchdog>=3.0.0
 
 docx~=0.2.4
 graphviz~=0.20.3
+
+pydantic
+uvicorn>=0.34.2

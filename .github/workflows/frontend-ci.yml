@@ -22,7 +22,9 @@ jobs:
     - name: Install frontend dependencies
       run: |
         npm install
+      working-directory: src/frontend
 
     - name: Run Jest tests
       run: |
         npm run test -- --ci --coverage
+      working-directory: src/frontend

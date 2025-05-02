@@ -1,0 +1,24 @@
+{
+  "name": "Campaign Manager Dev",
+  "dockerFile": "Dockerfile",
+  "workspaceFolder": "/workspaces/rpgCampaignManager",
+
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  "settings": {
+    "python.defaultInterpreterPath": "/usr/local/bin/python",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+
+  "extensions": [
+    "ms-python.python",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "editorconfig.editorconfig"
+  ],
+
+  "forwardPorts": [3000, 8000],
+
+  "remoteUser": "vscode"
+}
