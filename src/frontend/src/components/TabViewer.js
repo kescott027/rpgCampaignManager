@@ -1,6 +1,8 @@
 import React from 'react';
 
-export default function TabViewer({ activeTab, onTabChange, tabs, children }) {
+export default function TabViewer({ activeTab, onTabChange,
+                                    tabs = ['Markdown', 'JSON', 'Images', 'PDF', 'Audio', 'Video'],
+                                    children }) {
   return (
     <div className="tab-viewer">
       <div className="tab-bar">
@@ -14,7 +16,9 @@ export default function TabViewer({ activeTab, onTabChange, tabs, children }) {
           </button>
         ))}
       </div>
-      <div className="tab-content">{children}</div>
+      <div className="tab-content">
+        {children}
+      </div>
     </div>
   );
 }

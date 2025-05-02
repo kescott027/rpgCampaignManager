@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 
 export default function FileTree({ onFileSelect }) {
-  const [pathStack, setPathStack] = useState(["assets/my_campaigns"]);
+  const [pathStack, setPathStack] = useState(
+    ["/assets/my_campaigns/ForgeSworn/"]);
   const [contents, setContents] = useState([]);
 
   const currentPath = pathStack[pathStack.length - 1];

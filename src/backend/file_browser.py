@@ -6,7 +6,7 @@ from fastapi import APIRouter
 app = FastAPI()
 router = APIRouter()
 
-BASE_DIR = os.path.abspath("assets/my_campaigns")
+BASE_DIR = os.path.abspath("../../assets/my_campaigns")
 
 
 def secure_path(path: str) -> str:

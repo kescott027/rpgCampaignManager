@@ -1,12 +1,8 @@
-
-jsx
-Copy
-Edit
 import React, { useState, useEffect } from 'react';
 import TabViewer from './TabViewer';
 
-export default function DisplayWindow({ filePath }) {
-  const [activeTab, setActiveTab] = useState('Markdown');
+export default function DisplayWindow({ filePath, initialTab = 'Markdown' }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [fileContent, setFileContent] = useState('');
   const [fileType, setFileType] = useState('text');
 
@@ -20,12 +16,12 @@ export default function DisplayWindow({ filePath }) {
         setFileType(data.type || 'text');
       })
       .catch((err) => {
-        console.error("Error loading file:", err);
-        setFileContent(`[Error loading file]`);
+        console.error('Error loading file:', err);
+        setFileContent('[Error loading file]');
       });
   }, [filePath]);
 
-  return (
+return (
     <div className="display-window">
       <TabViewer
         activeTab={activeTab}
@@ -33,11 +29,7 @@ export default function DisplayWindow({ filePath }) {
         tabs={['Markdown', 'JSON', 'Images']}
       >
         {{
-          Markdown: (
-            <pre>
-              {fileType === 'text' ? fileContent : '[Non-text file]'}
-            </pre>
-          ),
+          Markdown: <pre>{fileType === 'text' ? fileContent : '[Non-text file]'}</pre>,
           JSON: (
             <pre>
               {fileType === 'json'
