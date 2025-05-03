@@ -1,9 +1,10 @@
 # === Campaign Manager Security and Local Caches ===
-/security/
 /assets/
 assets/my_campaigns/
 
 #  ==== dont track secrets ===
+/.security/
+.security/
 .env
 *.key
 *.pem
@@ -11,6 +12,8 @@ assets/my_campaigns/
 token.json
 credentials.json
 .secrets.baseline
+openai.env
+service_account.json
 
 # === Python standard ===
 *.py[cod]

@@ -2,11 +2,11 @@ import { renderHook } from "@testing-library/react-hooks";
 import { useStartupMessages } from "./useStartupMessages";
 
 // Mock the API call
-jest.mock("utils/checkSecrets", () => ({
+jest.mock("../utils/checkSecrets", () => ({
   checkMissingSecrets: jest.fn()
 }));
 
-import { checkMissingSecrets } from "utils/checkSecrets";
+import { checkMissingSecrets } from "../utils/checkSecrets";
 
 describe("useStartupMessages", () => {
   afterEach(() => {

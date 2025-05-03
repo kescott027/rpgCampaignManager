@@ -25,7 +25,7 @@ class GPTProxy:
         root_dir = Path(__file__).resolve().parents[2]
         env_path = root_dir / '.security' / 'openai.env'
 
-        print(f"🔍 Loading secrets from: {env_path}")  # Temporary debug
+        # print(f"🔍 Loading secrets from: {env_path}")  # Temporary debug
 
         load_dotenv(dotenv_path=env_path)
 

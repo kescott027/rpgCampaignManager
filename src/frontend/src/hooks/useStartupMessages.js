@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { checkMissingSecrets } from "utils/checkSecrets";
+import { checkMissingSecrets } from "../utils/checkSecrets";
 
 export function useStartupMessages(sessionName = "Untitled Session") {
   const [messages, setMessages] = useState([]);

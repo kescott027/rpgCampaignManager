@@ -111,8 +111,8 @@ def load_image(path: str):
 async def check_secrets():
     from pathlib import Path
 
-    openai_file = Path(".secrets/openai.env")
-    google_file = Path(".secrets/google.env")
+    openai_file = Path(".security/openai.env")
+    google_file = Path(".security/google.env")
 
     return {
         "missingOpenAI": not openai_file.is_file(),
@@ -122,14 +122,14 @@ async def check_secrets():
 
 @app.post("/api/secrets/save")
 async def save_secrets(payload: SecretPayload):
-    os.makedirs(".secrets", exist_ok=True)
+    os.makedirs(".security", exist_ok=True)
 
     if payload.openaiKey:
-        with open(".secrets/openai.env", "w") as f:
+        with open(".security/openai.env", "w") as f:
             f.write(f"OPENAI_API_KEY={payload.openaiKey}\n")
 
     if payload.googleKey:
-        with open(".secrets/google.env", "w") as f:
+        with open(".security/google.env", "w") as f:
             f.write(f"GOOGLE_API_KEY={payload.googleKey}\n")
 
     return {"status": "ok"}

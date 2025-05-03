@@ -21,15 +21,15 @@ cd - || exit
 
   echo "[4/5] set up secrets"
 
-# Setup .secrets directory if missing
-if [ ! -f .secrets ]; then
-  mkdir -p .secrets
+# Setup .security directory if missing
+if [ ! -f .security ]; then
+  mkdir -p .security
 fi
 
 # Create README if missing
-if [ ! -f ".secrets/README.md" ]; then
-  cat > .secrets/README.md << EOF
-# 🔐 .secrets Directory
+if [ ! -f ".security/README.md" ]; then
+  cat > .security/README.md << EOF
+# 🔐 .security Directory
 
 This directory securely stores application-level secrets for \`rpgCampaignManager\`.
 
@@ -51,7 +51,7 @@ GOOGLE_API_KEY=xxxxxxx...
 
 ## Do Not Commit
 
-Ensure \`.secrets/\` is listed in \`.gitignore\`.
+Ensure \`.security/\` is listed in \`.gitignore\`.
 
 ## Editing
 

@@ -23,7 +23,7 @@ export default function SecurityConfigModal({ onClose }) {
     <div className="modal-overlay">
       <div className="modal">
         <h3>Configure API Keys</h3>
-        <p>These will be saved securely to <code>.secrets</code> and not logged.</p>
+        <p>These will be saved securely to <code>.security</code> and not logged.</p>
 
         <input
           type="password"
