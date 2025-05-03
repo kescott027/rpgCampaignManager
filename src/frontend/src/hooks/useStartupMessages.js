@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+// import { checkMissingSecrets } from "utils/checkSecrets"; jest reference not working
 import { checkMissingSecrets } from "../utils/checkSecrets";
 
 export function useStartupMessages(sessionName = "Untitled Session") {
