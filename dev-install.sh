@@ -23,19 +23,23 @@ npm install
 cd - || exit
 
 # Setup .env if missing
-echo "[4/7] set up secrets"
+echo "[4/7] setting up secrets"
 # TODO: change this into an interactive menu.
 # TODO: ask users if they want to
 # TODO: 1) enter Keys now
 # TODO: 2) get Keys from ENV settings
 # TODO: 3) or skip and add manually
 # TODO: We are **NOT** going to hard code it in a setup file.
-if [ ! -f .env ]; then
-  # echo "OPENAI_API_KEY=your-key-here" > .env
-  # echo "GOOGLE_API_KEY=your-key-here" >> .env
-  # echo "OBS_WEBSOCKET_TOKEN=your-token-here" >> .env
-  :
+mkdir -p .security
+
+if [ ! -f .secrets/openai.env ]; then
+  cp .security/openai.env.template .security/openai.env
+  echo "✅ Created .security/openai.env from template."
+  echo "⚠️  Please edit .security/openai.env and add your actual OpenAI API key."
+else
+  echo "🔐 Found existing .security/openai.env"
 fi
+
 
 # === Detect secrets ===
 echo "[5/7] building detect-secrets baseline..."

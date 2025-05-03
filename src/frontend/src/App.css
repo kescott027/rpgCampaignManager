@@ -45,6 +45,13 @@ body, html, .app-container {
   height: 100%;
 }
 
+.chat-header {
+  font-size: 1.2em;
+  padding: 0.5em;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #ccc;
+}
+
 .chat-log {
   flex: 1;
   padding: 10px;
@@ -52,8 +59,13 @@ body, html, .app-container {
   background: #fafafa;
 }
 
-.chat-msg.user { color: #222; }
-.chat-msg.gpt { color: #007acc; }
+.chat-msg.user {
+  color: #222;
+}
+
+.chat-msg.gpt {
+  color: #007acc;
+}
 
 .chat-input {
   display: flex;

@@ -1,7 +1,6 @@
 import subprocess
 import webbrowser
 import time
-import os
 import sys
 from pathlib import Path
 
@@ -18,23 +17,23 @@ FRONTEND_DIR = SRC_DIR / "frontend"
 
 def launch_backend():
     print("🚀 Launching FastAPI backend...")
-    return subprocess.Popen([
-        sys.executable,
-        "-m",
-        "uvicorn",
-        "src.backend.file_browser:app",
-        "--reload",
-        "--port",
-        str(BACKEND_PORT)
-    ], cwd=PROJECT_ROOT)
+    return subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "src.backend.file_browser:app",
+            "--reload",
+            "--port",
+            str(BACKEND_PORT),
+        ],
+        cwd=PROJECT_ROOT,
+    )
 
 
 def launch_frontend():
     print("🌐 Launching React frontend (npm start)...")
-    return subprocess.Popen(
-        ["npm", "start"],
-        cwd=str(FRONTEND_DIR)
-    )
+    return subprocess.Popen(["npm", "start"], cwd=str(FRONTEND_DIR))
 
 
 def open_browser():
