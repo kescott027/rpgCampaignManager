@@ -1,16 +1,16 @@
 /** @type {import("jest").Config} */
 module.exports = {
   rootDir: "./src",
-  moduleDirectories: ["node_modules", "<rootDir>"],
+  moduleDirectories: ["node_modules", "<rootDir>/frontend"],
   testEnvironment: "jsdom",
-  setupFilesAfterEnv: ["<rootDir>/setupTests.js"],
+  setupFilesAfterEnv: ["<rootDir>/src/frontend/setupTests.js"],
   transform: {
     "^.+\\.(js|jsx|ts|tsx)$": "babel-jest"
   },
   moduleNameMapper: {
-    "^hooks/(.*)$": "<rootDir>/hooks/$1",
-    "^utils/(.*)$": "<rootDir>/utils/$1",
-    "^components/(.*)$": "<rootDir>/components/$1",
+    "^hooks/(.*)$": "<rootDir>frontend/src/hooks/$1",
+    "^utils/(.*)$": "<rootDir>frontend/src/utils/$1",
+    "^components/(.*)$": "<rootDir>/frontend/src/components/$1",
     "\\.(css|less|scss)$": "identity-obj-proxy"
   }
 };
