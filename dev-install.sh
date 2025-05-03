@@ -19,25 +19,62 @@ pip install detect-secrets pre-commit black flake8 pylint pytest rich watchdog
 
 echo "[3/7] Installing Node modules (frontend)..."
 cd src/frontend || exit
-npm install
+npm install --save-dev \
+  jest \
+  babel-jest \
+  @babel/preset-env \
+  @babel/preset-react \
+  @testing-library/react \
+  @testing-library/jest-dom \
+  identity-obj-proxy
+
 cd - || exit
 
-# Setup .env if missing
-echo "[4/7] setting up secrets"
-# TODO: change this into an interactive menu.
-# TODO: ask users if they want to
-# TODO: 1) enter Keys now
-# TODO: 2) get Keys from ENV settings
-# TODO: 3) or skip and add manually
-# TODO: We are **NOT** going to hard code it in a setup file.
-mkdir -p .security
+echo "[4/7] Configuring secrets"
+# Setup .secrets
+e# Setup .secrets directory if missing
+if [ ! -f .secrets ]; then
+  mkdir -p .secrets
+fi
 
-if [ ! -f .secrets/openai.env ]; then
-  cp .security/openai.env.template .security/openai.env
-  echo "✅ Created .security/openai.env from template."
-  echo "⚠️  Please edit .security/openai.env and add your actual OpenAI API key."
-else
-  echo "🔐 Found existing .security/openai.env"
+# Create README if missing
+if [ ! -f ".secrets/README.md" ]; then
+  cat > .secrets/README.md << EOF
+# 🔐 .secrets Directory
+
+This directory securely stores application-level secrets for \`rpgCampaignManager\`.
+
+## Included Files
+
+- \`openai.env\` — contains your OpenAI API key
+- \`google.env\` — contains your Google Cloud API key (for Drive access)
+
+## Format
+
+Each file uses standard dotenv syntax:
+
+\`\`\`env
+OPENAI_API_KEY=sk-xxxxxxx...
+GOOGLE_API_KEY=xxxxxxx...
+\`\`\`
+
+> These keys are never logged or committed.
+
+## Do Not Commit
+
+Ensure \`.secrets/\` is listed in \`.gitignore\`.
+
+## Editing
+
+You can configure these keys by:
+- Running the app and entering \`configure security\` in the chat
+- Manually editing the files
+
+## Important
+
+- Keep your keys private and secure.
+- Do **not** upload this directory to public repos or share it.
+EOF
 fi
 
 
