@@ -1,50 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useStartupMessages } from "hooks/useStartupMessages";
 import { parseUiCommands } from "../utils/parseUiCommands";
 import SecurityConfigModal from "./SecurityConfigModal";
-import { checkMissingSecrets } from "utils/checkSecrets";
+import { handleUiCommands } from "../utils/handleUiCommands";
 
 export default function ChatSection() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
   const [sessionName, setSessionName] = useState("Untitled Session");
+  const [input, setInput] = useState("");
   const [showModal, setShowModal] = useState(false);
-  // const [missingKeyNotice, setMissingKeyNotice] = useState(false);
-  const [setMissingKeyNotice] = useState(false);
-
-  useEffect(() => {
-    checkMissingSecrets().then((res) => {
-      if (res.anyMissing) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "gpt",
-            text: `⚠️ Missing API Keys
-
-                rpgCampaignManager is an AI-powered and cloud-enabled campaign management tool.
-
-                This app requires API keys for:
-
-                - OpenAI: https://platform.openai.com/account/api-keys
-                - Google Cloud Drive: https://developers.google.com/drive/api/guides/authentication
-
-                To securely enter your keys, type: **configure security**`
-          }
-        ]);
-        setMissingKeyNotice(true);
-      }
-    });
-  }, []);
+  const { messages, setMessages } = useStartupMessages(sessionName);
 
   const sendMessage = async () => {
-    if (input.trim() === "") return;
+    const trimmed = input.trim();
+    if (!trimmed) return;
 
-    const userMsg = { role: "user", text: input };
-
-    if (input.trim().toLowerCase() === "configure security") {
+    if (trimmed.toLowerCase() === "configure security") {
       setShowModal(true);
       setInput("");
       return;
     }
+
+    const userMsg = { role: "user", text: trimmed };
 
     setMessages((prev) => [...prev, userMsg]);
     try {
@@ -64,13 +40,10 @@ export default function ChatSection() {
       const { cleanedText, actions } = parseUiCommands(data.response);
 
       // Handle UI actions
-      actions.forEach(({ command, value }) => {
-        if (command === "session_update") {
-          setSessionName(value);
-          setRenameNotice("Session has been renamed to \"${value}\"");
-          setTimeout(() => setRenameNotice(""), 3000);
-        }
-        // Future support: tag_add, file_load, etc.
+      handleUiCommands(actions, {
+        setSessionName,
+        setRenameNotice
+        // Add more here in the future
       });
 
       const botMsg = { role: "gpt", text: cleanedText };
