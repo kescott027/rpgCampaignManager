@@ -44,6 +44,7 @@ def search_google_drive(query, max_results=5):
     return results.get('files', [])
 
 def list_folder_contents(folder_id="root"):
+    print(f" list folder called with folder Id {folder_id}")
     mode = load_drive_mode()
     if mode == "api":
         api_key = get_google_drive_key()
@@ -53,10 +54,14 @@ def list_folder_contents(folder_id="root"):
             "fields": "files(id, name, mimeType, modifiedTime)"
         }
         url = "https://www.googleapis.com/drive/v3/files"
+        print(f"requesting response for folder_Id {folder_id}")
         response = requests.get(url, params=params)
+
         if response.status_code != 200:
-            raise RuntimeError(f"Google Drive API error: {response.status_code} - {response.text}")
+            print(f"🚨 Google API ERROR: {response.status_code} - {response.text} - params {params}")
+            raise RuntimeError(f"Google Drive API error: {response.status_code} - {response.text} params: {params}")
         return response.json().get("files", [])
+
     else:
         service = get_drive_service()
         results = service.files().list(

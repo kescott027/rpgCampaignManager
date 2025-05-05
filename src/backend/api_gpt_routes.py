@@ -4,21 +4,14 @@ from fastapi import APIRouter, Request, Query, FastAPI
 from fastapi.responses import JSONResponse
 from openai import OpenAI
 from pathlib import Path
-from gpt_proxy import GPTProxy
-from .controller_gpt import GPTProxy,
-from src.backend.account_security import secure_path
+from .controller_gpt import GPTProxy
+from .controller_security import secure_path
 
 router = APIRouter()
 
 client = OpenAI()
 app = FastAPI()
 proxy = GPTProxy()
-
-class ChatRequest(BaseModel):
-    message: str
-    session_name: Optional[str] = None
-    tags: Optional[List[str]] = []
-
 
 @router.post("/api/gpt/proxy")
 async def gpt_proxy(req: Request):

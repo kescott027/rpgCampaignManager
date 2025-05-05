@@ -7,6 +7,6 @@ from .api_security_routes import router as security_router
 
 app = FastAPI()
 app.include_router(gpt_router)
-router.include_router(drive_router)
-router.include_router(security_router)
-router.include_router(file_router)
+app.include_router(drive_router)
+app.include_router(security_router)
+app.include_router(file_router)

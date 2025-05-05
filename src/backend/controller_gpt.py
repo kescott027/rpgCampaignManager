@@ -4,6 +4,15 @@ import json
 from dotenv import load_dotenv
 from datetime import datetime
 from typing import List
+from pydantic import BaseModel
+from typing import Optional
+
+
+class ChatRequest(BaseModel):
+    message: str
+    session_name: Optional[str] = None
+    tags: Optional[List[str]] = []
+
 
 class GPTProxy:
     def __init__(self, config_file=None):

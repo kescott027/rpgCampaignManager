@@ -6,8 +6,45 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   const [fileContent, setFileContent] = useState("");
   const [fileType, setFileType] = useState("text");
 
+  const renderDriveListing = () => {
+    const items = Array.isArray(filePath?.payload) ? filePath.payload : [];
+
+    return (
+      <div>
+        <h3>📂 Google Drive Folder</h3>
+        <ul>
+          {items.map((item) => (
+            <li key={item.id}>
+              <button
+                onClick={async () => {
+                  try {
+                    if (item.mimeType.includes("folder")) {
+                      //const res = await fetch(`/api/drive/list?folderId=${item.id}`);
+                      const res = await fetch(`/api/drive/list?folderId='root'`);
+                      const data = await res.json();
+                      onFileSelect({ type: "drive-listing", payload: data.items });
+                    } else {
+                      const res = await fetch(`/api/drive/file?id=${item.id}`);
+                      const data = await res.json();
+                      onFileSelect({ type: "drive-file", payload: data.content });
+                    }
+                  } catch (err) {
+                    console.error("❌ Error loading Google Drive item:", err);
+                  }
+                }}
+              >
+                {item.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
   useEffect(() => {
     if (!filePath || typeof filePath === "object") return;
+
     fetch(`/api/localstore/load-file?path=${encodeURIComponent(filePath)}`)
       .then((res) => res.json())
       .then((data) => {
@@ -20,44 +57,19 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
       });
   }, [filePath]);
 
-  const renderDriveListing = () => (
-    <div>
-      <h3>📂 Google Drive Folder</h3>
-      <ul>
-        {Array.isArray(filePath?.payload) && filePath.payload.map((item) => (
-          <li key={item.id}>
-            <button
-              onClick={async () => {
-                if (item.mimeType.includes("folder")) {
-                  const res = await fetch(`/api/drive/list?folderId=${item.id}`);
-                  const data = await res.json();
-                  onFileSelect({ type: "drive-listing", payload: data.items });
-                } else {
-                  const res = await fetch(`/api/drive/file?id=${item.id}`);
-                  const data = await res.json();
-                  onFileSelect({ type: "drive-file", payload: data.content });
-                }
-              }}
-            >
-              {item.name}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  if (!filePath) return <div className="display-window">No file selected</div>;
+  if (filePath.type === "drive-listing") return <div className="display-window">{renderDriveListing()}</div>;
+  if (filePath.type === "drive-file") return <div className="display-window">
+    <pre>{filePath.payload}</pre>
+  </div>;
 
-  let content;
-
-  if (!filePath) {
-    content = <div>No file selected</div>;
-  } else if (filePath.type === "drive-listing") {
-    content = renderDriveListing();
-  } else if (filePath.type === "drive-file") {
-    content = <pre>{filePath.payload}</pre>;
-  } else {
-    content = (
-      <TabViewer activeTab={activeTab} onTabChange={setActiveTab} tabs={["Markdown", "JSON", "Images"]}>
+  return (
+    <div className="display-window">
+      <TabViewer
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabs={["Markdown", "JSON", "Images"]}
+      >
         {{
           Markdown: <pre>{fileType === "text" ? fileContent : "[Non-text file]"}</pre>,
           JSON: (
@@ -69,17 +81,15 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
           ),
           Images: fileType === "image" ? (
             <img
-              src={`/api/load-image?path=${encodeURIComponent(filePath)}`}
+              src={`/api/localstore/load-image?path=${encodeURIComponent(filePath)}`}
               alt="preview"
               style={{ maxWidth: "100%" }}
             />
           ) : (
             <p>[Not an image]</p>
-          ),
+          )
         }[activeTab]}
       </TabViewer>
-    );
-  }
-
-  return <div className="display-window">{content}</div>;
+    </div>
+  );
 }

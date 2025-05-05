@@ -2,6 +2,7 @@
 api_drive_routes controls communication to google drive
 """
 from fastapi import APIRouter, Query
+from fastapi.responses import JSONResponse
 from src.backend.controller_drive import (
     list_folder_contents,
     search_google_drive,
@@ -10,9 +11,8 @@ from src.backend.controller_drive import (
 
 router = APIRouter()
 
-
 @router.get("/api/drive/list")
-async def drive_list(folderId: str = Query(default="root")):
+async def drive_list(folderId: str = Query("root")): # Query(default="root")):
     try:
         items = list_folder_contents(folder_id=folderId)
         return {"items": items}

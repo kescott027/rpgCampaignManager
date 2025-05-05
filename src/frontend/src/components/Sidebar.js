@@ -1,5 +1,6 @@
 import React from 'react';
-import FileTree from './FileTree';
+import FileTree from "./FileTree";
+import logo from "./assets/logo.png";
 
 export default function Sidebar({ onFileSelect }) {
   const handleDriveClick = async () => {
@@ -14,8 +15,10 @@ export default function Sidebar({ onFileSelect }) {
 
   return (
     <div className="sidebar">
-      <h2>Campaign Manager</h2>
-
+      <div className="logo-container">
+        <img src={logo} alt="Campaign Logo" className="logo" />
+        <h2>Campaign Manager</h2>
+      </div>
       <div className="section">
         <input
           type="text"
