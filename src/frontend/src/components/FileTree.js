@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 
 export default function FileTree({ onFileSelect }) {
   const [pathStack, setPathStack] = useState(
-    ["/assets/my_campaigns/ForgeSworn/"]);
+    ["/assets/my_campaigns/"]);
   const [contents, setContents] = useState([]);
 
   const currentPath = pathStack[pathStack.length - 1];
 
   useEffect(() => {
-    fetch(`/api/list-dir?path=${encodeURIComponent(currentPath)}`)
+    fetch(`/api/drive/list?path=${encodeURIComponent(currentPath)}`)
       .then(res => res.json())
       .then(data => setContents(data.items || []));
   }, [currentPath]);

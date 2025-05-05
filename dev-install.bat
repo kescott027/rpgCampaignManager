@@ -18,8 +18,9 @@ pip install detect-secrets pre-commit bkacj flake8 pylint pytest
 REM Install Node packages
 echo [3/7] Installing Node packages...
 cd src\frontend
-npm install --save-dev \
+call npm install --save-dev \
   jest \
+  cross-env \
   babel-jest \
   @babel/preset-env \
   @babel/preset-react \

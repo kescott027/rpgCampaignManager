@@ -1,5 +1,6 @@
 import os
 import io
+from typing import List
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -135,6 +136,17 @@ class DriveSync:
                 .execute()
         )
         return results.get("files", [])
+
+
+def project_root():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    while True:
+        if any(os.path.exists(os.path.join(current_dir, marker)) for marker in ['.git', 'pyproject.toml', 'setup.py']):
+            return current_dir
+        parent_dir = os.path.dirname(current_dir)
+        if parent_dir == current_dir:
+            raise FileNotFoundError("Project root not found.")
+        current_dir = parent_dir
 
 
 # === Example Usage ===

@@ -21,6 +21,7 @@ echo "[3/7] Installing Node modules (frontend)..."
 cd src/frontend || exit
 npm install --save-dev \
   jest \
+  cross-env \
   babel-jest \
   @babel/preset-env \
   @babel/preset-react \

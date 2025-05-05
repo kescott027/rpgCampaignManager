@@ -15,7 +15,7 @@ pip install -r requirements.txt
 
 REM Install Node packages
 echo [3/5] Installing Node packages...
-npm install
+call npm install
 
 REM Setup security directory
 if not exist security (
