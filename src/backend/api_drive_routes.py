@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, Query
-from src.backend.controller_drive_dispatcher import (
+from src.backend.controller_drive import (
     list_folder_contents,
     search_google_drive,
     read_text_file
