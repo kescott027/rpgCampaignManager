@@ -9,9 +9,12 @@ export default function FileTree({ onFileSelect }) {
   useEffect(() => {
     const fetchContents = async () => {
       try {
-        console.log("📁 Opening Drive item:", item.name, item.id);
+        // console.log("📁 Opening Drive item:", item.name, item.id);
         console.log("folder Id: ", encodeURIComponent(currentFolderId));
-        const res = await fetch(`/api/drive/list?folderId=${encodeURIComponent(currentFolderId)}`);
+        const res = await fetch(`/api/drive/list?folderId=${encodeURIComponent(currentFolderId)}`, {
+          method: "GET",
+          credentials: "include"
+        });
         const data = await res.json();
 
         if (data?.items) {

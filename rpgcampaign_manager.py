@@ -30,6 +30,8 @@ def launch_backend():
             "--reload",
             "--port",
             str(BACKEND_PORT),
+            "--log-level",
+            "debug"
         ],
         cwd=PROJECT_ROOT,
     )

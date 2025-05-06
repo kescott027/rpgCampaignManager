@@ -10,6 +10,7 @@ export default function SecurityConfigModal({ onClose }) {
     setSaving(true);
     await fetch("/api/secrets/save", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ openaiKey, googleKey })
     });

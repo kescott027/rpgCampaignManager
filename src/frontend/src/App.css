@@ -60,6 +60,11 @@ body, html, .app-container {
   height: 100%;
 }
 
+.chat-msg.debug {
+  color: #888;
+  font-style: italic;
+}
+
 .chat-header {
   font-size: 1.2em;
   padding: 0.5em;

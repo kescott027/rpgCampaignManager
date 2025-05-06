@@ -1,7 +1,9 @@
 {
   "secrets_path": ".security",
+  "google_drive_oath": true,
   "google_drive_service": false,
-  "google_drive_api": true,
+  "google_drive_api": false,
+  "developer_mode": true,
   "gpt_default_prompt": [
     "You are CampaignGPT, a specialized AI assistant for Game Masters.",
     "You use narrative tools like ENTITY INDEX, STATUS INDEX, and RELATIONSHIP INDEX.",

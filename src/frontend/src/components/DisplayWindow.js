@@ -19,12 +19,18 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
                 onClick={async () => {
                   try {
                     if (item.mimeType.includes("folder")) {
-                      //const res = await fetch(`/api/drive/list?folderId=${item.id}`);
-                      const res = await fetch(`/api/drive/list?folderId='root'`);
+                      //const res = await fetch(`/api/drive/list?folderId=${item.id}`); was ='root'
+                      const res = await fetch(`/api/drive/list?folderId==${item.id}`, {
+                        method: "GET",
+                        credentials: "include" // This sends the session_id cookie
+                      });
                       const data = await res.json();
                       onFileSelect({ type: "drive-listing", payload: data.items });
                     } else {
-                      const res = await fetch(`/api/drive/file?id=${item.id}`);
+                      const res = await fetch(`/api/drive/file?id=${item.id}`, {
+                        method: "GET",
+                        credentials: "include" // This sends the session_id cookie
+                      });
                       const data = await res.json();
                       onFileSelect({ type: "drive-file", payload: data.content });
                     }
@@ -45,7 +51,10 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   useEffect(() => {
     if (!filePath || typeof filePath === "object") return;
 
-    fetch(`/api/localstore/load-file?path=${encodeURIComponent(filePath)}`)
+    fetch(`/api/localstore/load-file?path=${encodeURIComponent(filePath)}`, {
+      method: "GET",
+      credentials: "include" // This sends the session_id cookie
+    })
       .then((res) => res.json())
       .then((data) => {
         setFileContent(data.content || "");

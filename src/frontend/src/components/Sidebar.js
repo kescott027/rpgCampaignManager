@@ -1,11 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
 import FileTree from "./FileTree";
+import GoogleLoginButton from "./GoogleLogin";
 import logo from "./assets/logo.png";
 
 export default function Sidebar({ onFileSelect }) {
+  const [sessionActive, setSessionActive] = useState(false);
+
+  useEffect(() => {
+    // Very basic session detection via cookie presence
+    const hasSession = document.cookie.includes("session_id=");
+    setSessionActive(hasSession);
+  }, []);
+
   const handleDriveClick = async () => {
     try {
-      const res = await fetch("/api/drive/list?folderId=root");
+      const res = await fetch("/api/drive/list?folderId=root", {
+        method: "GET",
+        credentials: "include"
+      });
       const data = await res.json();
       onFileSelect({ type: "drive-listing", payload: data.items });
     } catch (err) {
@@ -19,6 +31,7 @@ export default function Sidebar({ onFileSelect }) {
         <img src={logo} alt="Campaign Logo" className="logo" />
         <h2>Campaign Manager</h2>
       </div>
+      <GoogleLoginButton sessionActive={sessionActive} onLogout={() => setSessionActive(false)} />
       <div className="section">
         <input
           type="text"
@@ -27,7 +40,35 @@ export default function Sidebar({ onFileSelect }) {
           aria-label="Search"
         />
       </div>
+      <div className="section">
+        <h4>🛠️ Debug Tools</h4>
+        {<button
+          onClick={async () => {
+            try {
+              console.log("📁 Calling root folder explicitly…");
+              const res = await fetch("/api/drive/list?folderId=root", {
+                method: "GET",
+                credentials: "include"
+              });
+              const data = await res.json();
 
+              if (res.ok) {
+                console.log("✅ Root folder items:", data.items);
+                alert(`Loaded ${data.items.length} items from root folder.`);
+              } else {
+                console.error("❌ Error from API:", data.error);
+                alert(`Drive Error:\n${data.error}`);
+              }
+            } catch (err) {
+              console.error("🚨 Unexpected fetch error:", err);
+              alert("Unexpected error: " + err.message);
+            }
+          }}
+        >
+          🔍 Test Root Folder
+        </button>
+        }
+      </div>
       <div className="section">
         <h4
           onClick={handleDriveClick}

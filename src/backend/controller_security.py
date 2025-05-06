@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from .controller_localstore import project_root
 from typing import Optional
+from pathlib import Path
 
 
 class SecretPayload(BaseModel):
@@ -23,6 +24,40 @@ def secure_path(path: str) -> str:
     if not abs_path.startswith(BASE_DIR):
         raise ValueError("Unauthorized path access")
     return abs_path
+
+def load_config():
+    config_path = Path(__file__).resolve().parents[2] / 'manager_config.json'
+    if config_path.exists():
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+
+        if config['google_drive_oath']:
+            get_google_oauth_creds
+        elif config['google_drive_api']:
+            get_google_drive_key
+        elif config['google_drive_service']:
+            get_google_service_account()
+        else:
+             get_google_oauth_creds
+        return config
+    return {}
+
+
+def get_google_oauth_creds():
+
+    if not os.getenv("GOOGLE_CLIENT_ID"):
+        env_path = os.path.join(project_root(), '.security', 'oauth.json')
+        oath_keys = json.loads(env_path)
+
+        os.environ["GOOGLE_CLIENT_ID"] = oath_keys["Client_ID"]
+        os.environ["GOOGLE_CLIENT_SECRET"] = oath_keys["Client_Secret"]
+        os.environ["REDIRECT_URI"] = oath_keys["Redirect_Url"]
+        os.environ['SESSION_STORE'] = Path(".security/oauth_sessions.json")
+        if not os.getenv("GOOGLE_CLIENT_ID"):
+            raise ValueError(
+            f"❌ GOOGLE_CLIENT_ID is missing. ensure your google client credentials are configured correctly: {env_path}")
+
+    return oath_keys
 
 
 def get_google_service_account():

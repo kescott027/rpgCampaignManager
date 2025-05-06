@@ -1,11 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getDeveloperMode } from "../utils/getConfig";
 
 export default function ChatSection({ sessionName = "Untitled Session", filePath = null }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
 
+  const [developerMode, setDeveloperMode] = useState(false);
+  useEffect(() => {
+    getDeveloperMode().then(setDeveloperMode);
+  }, []);
+
   const handleSend = async () => {
     if (!input.trim()) return;
+
+    if (developerMode) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "debug", text: `📤 Sending prompt: ${input}` }
+      ]);
+    }
 
     const userMessage = { role: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -55,8 +68,8 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
   return (
     <div className="chat-section">
       <div className="chat-log">
-        {messages.map((msg, i) => (
-          <div key={i} className={`chat-msg ${msg.role}`}>
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`chat-msg ${msg.role}`}>
             {msg.text}
           </div>
         ))}
