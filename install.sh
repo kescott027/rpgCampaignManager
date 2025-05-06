@@ -19,20 +19,54 @@ cd src/frontend || exit
 npm install
 cd - || exit
 
-# Setup .env file if missing
   echo "[4/5] set up secrets"
-# TODO: change this into an interactive menu.
-# TODO: ask users if they want to
-# TODO: 1) enter Keys now
-# TODO: 2) get Keys from ENV settings
-# TODO: 3) or skip and add manually
-# TODO: We are **NOT** going to hard code it in a setup file.
-if [ ! -f .env ]; then
-  :
-  # echo "OPENAI_API_KEY=your-key-here" > .env
-  # echo "GOOGLE_API_KEY=your-key-here" >> .env
-  # echo "OBS_WEBSOCKET_TOKEN=your-token-here" >> .env
+
+# Setup .security directory if missing
+if [ ! -f .security ]; then
+  mkdir -p .security
 fi
 
+# Create README if missing
+if [ ! -f ".security/README.md" ]; then
+  cat > .security/README.md << EOF
+# 🔐 .security Directory
+
+This directory securely stores application-level secrets for \`rpgCampaignManager\`.
+
+## Included Files
+
+- \`openai.env\` — contains your OpenAI API key
+- \`google.env\` — contains your Google Cloud API key (for Drive access)
+
+## Format
+
+Each file uses standard dotenv syntax:
+
+\`\`\`env
+OPENAI_API_KEY=sk-xxxxxxx...
+GOOGLE_API_KEY=xxxxxxx...
+\`\`\`
+
+> These keys are never logged or committed.
+
+## Do Not Commit
+
+Ensure \`.security/\` is listed in \`.gitignore\`.
+
+## Editing
+
+You can configure these keys by:
+- Running the app and entering \`configure security\` in the chat
+- Manually editing the files
+
+## Important
+
+- Keep your keys private and secure.
+- Do **not** upload this directory to public repos or share it.
+EOF
+
+fi
+
+
 echo "[5/5] Setup complete!"
-echo "To run: manager-start"
+echo "To run: rpgcampaign_manager"

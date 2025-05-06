@@ -1,24 +1,46 @@
 import React, { useState, useEffect } from "react";
 
 export default function FileTree({ onFileSelect }) {
-  const [pathStack, setPathStack] = useState(
-    ["/assets/my_campaigns/ForgeSworn/"]);
+  const [pathStack, setPathStack] = useState(["root"]);
   const [contents, setContents] = useState([]);
 
-  const currentPath = pathStack[pathStack.length - 1];
+  const currentFolderId = pathStack[pathStack.length - 1];
 
   useEffect(() => {
-    fetch(`/api/list-dir?path=${encodeURIComponent(currentPath)}`)
-      .then(res => res.json())
-      .then(data => setContents(data.items || []));
-  }, [currentPath]);
+    const fetchContents = async () => {
+      try {
+        // console.log("📁 Opening Drive item:", item.name, item.id);
+        console.log("folder Id: ", encodeURIComponent(currentFolderId));
+        const res = await fetch(`/api/drive/list?folderId=${encodeURIComponent(currentFolderId)}`, {
+          method: "GET",
+          credentials: "include"
+        });
+        const data = await res.json();
 
-  const openFolder = (folderName) => {
-    setPathStack([...pathStack, `${currentPath}/${folderName}`]);
+        if (data?.items) {
+          setContents(data.items);
+        } else {
+          console.warn("⚠️ Unexpected response format:", data);
+          setContents([]);
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch folder contents:", err);
+        setContents([]);
+      }
+    };
+
+    fetchContents();
+  }, [currentFolderId]);
+
+  const openFolder = (folderId) => {
+    console.log("📁 Opening Drive item:", { folderId });
+    setPathStack((prev) => [...prev, folderId]);
   };
 
   const goUp = () => {
-    if (pathStack.length > 1) setPathStack(pathStack.slice(0, -1));
+    if (pathStack.length > 1) {
+      setPathStack((prev) => prev.slice(0, -1));
+    }
   };
 
   return (
@@ -26,11 +48,11 @@ export default function FileTree({ onFileSelect }) {
       <button onClick={goUp}>⬆️ Up</button>
       <ul>
         {contents.map((item) => (
-          <li key={item.name}>
-            {item.type === "directory" ? (
-              <span onClick={() => openFolder(item.name)}>📁 {item.name}</span>
+          <li key={item.id}>
+            {item.mimeType?.includes("folder") ? (
+              <span onClick={() => openFolder(item.id)}>📁 {item.name}</span>
             ) : (
-              <span onClick={() => onFileSelect(`${currentPath}/${item.name}`)}>
+              <span onClick={() => onFileSelect({ type: "drive-file", payload: item.id })}>
                 📄 {item.name}
               </span>
             )}

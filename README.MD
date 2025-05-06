@@ -1,12 +1,22 @@
 # 🎲 Campaign Manager
 
-**Campaign Manager** is a modular, AI-powered system for Game Masters running narrative-heavy tabletop RPG campaigns. It provides a flexible interface to manage world lore, combat, player data, and plotlines — all synchronized with ChatGPT and Google Drive.
+**Campaign Manager** is a modular, AI-powered system for Game Masters running narrative-heavy tabletop RPG campaigns. It
+provides a flexible interface to manage world lore, combat, player data, and plotlines — all synchronized with ChatGPT
+and Google Drive.
 
 ---
 ![Backend CI](https://github.com/kescott027/campaign-manager/actions/workflows/python-ci.yml/badge.svg)
 ![Frontend CI](https://github.com/kescott027/campaign-manager/actions/workflows/frontend-ci.yml/badge.svg)
 
 ---
+
+## Installation
+
+### 🔐 Setting Up Your API Key
+
+1. Copy the template:
+   ```bash
+   cp .security/openai.env.template .security/openai.env
 
 ## 🚀 Features
 
@@ -21,14 +31,11 @@
 
 ## 🧱 Interface Overview
 
-|    📄 Display Window (Top)   |
-|-------------------------------|
-|    💬 Chat Window (Bottom)   |
-| [Resizable] Input + Response |
-+-------------------------------+
-| 🔍 Sidebar: Index + Search   |
-+-------------------------------+
-
+| 📄 Display Window (Top)            |
+|------------------------------------|
+| 💬 Chat Window (Bottom)            |
+| [Resizable] Input + Response       |
+| 🔍 Sidebar: Index + Search         |
 
 - View assets: Markdown, JSON, images
 - ChatGPT-powered prompt window with command parser
@@ -44,14 +51,14 @@ CampaignManager/ ├── Entity_Index.json ├── Event_Index.json ├─�
 
 ## 🧩 Modules
 
-| Module               | Description                                   |
-|----------------------|-----------------------------------------------|
-| `ChatGPTConnector`   | Sends structured queries and tracks replies   |
-| `FileHandler`        | Syncs files between local state & Google Drive|
-| `ParsingEngine`      | Interprets user input & dispatches commands   |
-| `CombatEngine`       | Manages initiative, turns, actions            |
-| `OBSConnector`       | Sends scene-change commands to OBS            |
-| `SearchEngine`       | Cross-links entity index and memory search    |
+| Module             | Description                                    |
+|--------------------|------------------------------------------------|
+| `ChatGPTConnector` | Sends structured queries and tracks replies    |
+| `FileHandler`      | Syncs files between local state & Google Drive |
+| `ParsingEngine`    | Interprets user input & dispatches commands    |
+| `CombatEngine`     | Manages initiative, turns, actions             |
+| `OBSConnector`     | Sends scene-change commands to OBS             |
+| `SearchEngine`     | Cross-links entity index and memory search     |
 
 ---
 
@@ -91,6 +98,7 @@ OpenAI API key
 OBS WebSocket URL + token
 
 ### Run the App ###
+
 ```npm start```
 
 ---
@@ -100,39 +108,44 @@ OBS WebSocket URL + token
 **Note:** by default asset data is stored in a local cache in the `.\assets\my_campaigns` for fast asset usage.
 
 ### Asset Exposure
-The `.\assets\my_campaign` directory is ignored via the .gitignore file in the project root.  This is to prevent
-inadvertent exposure of *private*, *creative*, or *sensitive* data in the event you fork this data and syncronize it
-to a public repository.  To bypass this behavior you may remove
-The following line from .gitignore in the project root directory:
+
+The `.\assets\my_campaign` directory is ignored via the .gitignore file in the project root. This is to prevent
+inadvertent exposure of *private*, *creative*, or *sensitive* data in the event you fork this data and synchronize it to
+a public repository. To bypass this behavior you may remove The following line from .gitignore in the project root
+directory:
 `/assets/my_campaigns/`
 
-**NOTE:**  Doing so may expose any data included to the public if uploaded to a non-private repository.
-It is your responsibility to ensure that your data is protected.
+**NOTE:**  Doing so may expose any data included to the public if uploaded to a non-private repository. It is your
+responsibility to ensure that your data is protected.
 
 ### Asset Licensing
-If you do wish to share campaign assets, it is recommended to include a license file with the campaign assets to
-denote the licensing terms that apply to this shared personal content.
+
+If you do wish to share campaign assets, it is recommended to include a license file with the campaign assets to denote
+the licensing terms that apply to this shared personal content.
 
 For more information on licensing, see the GitHub documentation on
 [licensing a repository](
-https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository).
+https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository)
+.
 
-This repository as released is covered by the [license found here](//LICENSE.md).
+This repository as released is covered by the [license found here](LICENSE.md).
 
 ### Security Keys
-This application requires API keys for OpenAPI and Google Drive.  It is your responsibility
-to protect your sensitive key information from exposure.  If you give access your private version of this
-source code, ensure any required api keys are excluded or ignored from the repository or share using the
-.gitignore file or by another means of excluding your personal account access via API keys.  Exposing API keys outside of your control will give access to use private account features
-to other individuals.
 
-It is recommended using best practices for security when distributing any personal data or information
-with this application.
+This application requires API keys for OpenAPI and Google Drive. It is your responsibility to protect your sensitive key
+information from exposure. If you give access your private version of this source code, ensure any required api keys are
+excluded or ignored from the repository or share using the .gitignore file or by another means of excluding your
+personal account access via API keys. Exposing API keys outside your control will give access to use private account
+features to other individuals.
+
+It is recommended using best practices for security when distributing any personal data or information with this
+application.
 
 ---
 
 ## 🛠 Developer Install (with Pre-Commit Hooks)
-For contributors and maintainers, these dev install scripts ensure a fully validated environment, including:
+
+For contributors and maintainers, Dev install scripts ensure a fully validated environment, including:
 
 - Python + Node.js dependencies
 - GPT access via .env
@@ -215,11 +228,11 @@ Campaign Manager uses GitHub Actions to automatically validate code on every pus
 ###🧪 GitHub Actions Workflow
 On every commit or PR to main or dev branches, the following steps run:
 
-| Step               | Tool              | Purpose                        |
-|--------------------|-------------------|--------------------------------|
-| ✅ Code Format | `black`           | Enforces consistent style      |
-| ✅ Linting | `flake8`, `pylint` | Catches Python errors, warnings |
-| ✅ Tests | `pytest`          | Runs test suite in `/tests/`   |
+| Step          | Tool               | Purpose                         |
+|---------------|--------------------|---------------------------------|
+| ✅ Code Format | `black`            | Enforces consistent style       |
+| ✅ Linting     | `flake8`, `pylint` | Catches Python errors, warnings |
+| ✅ Tests       | `pytest`           | Runs test suite in `/tests/`    |
 
 ###✅ Benefits
 - Catch bugs before merging

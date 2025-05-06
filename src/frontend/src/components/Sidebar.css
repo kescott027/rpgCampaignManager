@@ -1,0 +1,21 @@
+/* App.css or Sidebar.css */
+.sidebar {
+  background: linear-gradient(to right, #1f1c2c, #928dab); /* example gradient */
+  color: white;
+  width: 280px;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 32px;
+  height: 32px;
+}

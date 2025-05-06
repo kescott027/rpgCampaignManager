@@ -1,23 +1,15 @@
-from fastapi import FastAPI, Query
-from fastapi.responses import JSONResponse, FileResponse
 import os
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from fastapi.responses import JSONResponse, FileResponse
+from typing import Optional, List, Iterator, cast
 
-app = FastAPI()
-router = APIRouter()
 
 BASE_DIR = os.path.abspath("../../assets/my_campaigns")
 
-
-def secure_path(path: str) -> str:
-    # Prevent directory traversal
-    abs_path = os.path.abspath(path)
-    if not abs_path.startswith(BASE_DIR):
-        raise ValueError("Unauthorized path access")
-    return abs_path
+router = APIRouter()
 
 
-@app.get("/api/list-dir")
+@router.get("/api/localstore/list-dir")
 def list_dir(path: str = Query(default=BASE_DIR)):
     try:
         abs_path = secure_path(path)
@@ -25,17 +17,18 @@ def list_dir(path: str = Query(default=BASE_DIR)):
             return JSONResponse(status_code=404, content={"error": "Path not found"})
 
         items = []
-        for entry in os.scandir(abs_path):
-            items.append({
-                "name": entry.name,
-                "type": "directory" if entry.is_dir() else "file"
-            })
+
+        entries = cast(Iterator[os.DirEntry], os.scandir(abs_path))
+        for entry in entries:
+            items.append(
+                {"name": entry.name, "type": "directory" if entry.is_dir() else "file"}
+            )
         return {"path": abs_path, "items": items}
     except Exception as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
 
 
-@app.get("/api/load-file")
+@router.get("/api/localstore/load-file")
 def load_file(path: str):
     try:
         abs_path = secure_path(path)
@@ -57,7 +50,7 @@ def load_file(path: str):
         return JSONResponse(status_code=400, content={"error": str(e)})
 
 
-@app.get("/api/load-image")
+@router.get("/api/localstore/load-image")
 def load_image(path: str):
     try:
         abs_path = secure_path(path)

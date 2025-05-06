@@ -1,9 +1,9 @@
 import subprocess
 import webbrowser
 import time
-import os
 import sys
 from pathlib import Path
+import src.backend.controller_security as Security
 
 # Constants
 BACKEND_PORT = 8000
@@ -12,29 +12,35 @@ FRONTEND_URL = f"http://localhost:{FRONTEND_PORT}"
 
 PROJECT_ROOT = Path(__file__).parent
 SRC_DIR = PROJECT_ROOT / "src"
-BACKEND_ENTRY = SRC_DIR / "backend" / "file_browser.py"
+BACKEND_ENTRY = SRC_DIR / "backend" / "api_service.py"
 FRONTEND_DIR = SRC_DIR / "frontend"
+
+
+Security.get_google_drive_key()
+Security.get_gpt_key()
 
 
 def launch_backend():
     print("🚀 Launching FastAPI backend...")
-    return subprocess.Popen([
-        sys.executable,
-        "-m",
-        "uvicorn",
-        "src.backend.file_browser:app",
-        "--reload",
-        "--port",
-        str(BACKEND_PORT)
-    ], cwd=PROJECT_ROOT)
+    return subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "src.backend.api_service:app",  # updated module path
+            "--reload",
+            "--port",
+            str(BACKEND_PORT),
+            "--log-level",
+            "debug",
+        ],
+        cwd=PROJECT_ROOT,
+    )
 
 
 def launch_frontend():
     print("🌐 Launching React frontend (npm start)...")
-    return subprocess.Popen(
-        ["npm", "start"],
-        cwd=str(FRONTEND_DIR)
-    )
+    return subprocess.Popen(["npm", "start"], cwd=str(FRONTEND_DIR))
 
 
 def open_browser():
