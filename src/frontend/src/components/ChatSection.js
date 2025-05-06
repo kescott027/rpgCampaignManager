@@ -4,8 +4,9 @@ import { getDeveloperMode } from "../utils/getConfig";
 export default function ChatSection({ sessionName = "Untitled Session", filePath = null }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
-
   const [developerMode, setDeveloperMode] = useState(false);
+  const [showDevTools, setShowDevTools] = useState(false);
+
   useEffect(() => {
     getDeveloperMode().then(setDeveloperMode);
   }, []);
@@ -42,7 +43,6 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
       console.log("✅ GPT response received:", data);
       const gptMessage = { role: "gpt", text: data.response };
       setMessages((prev) => [...prev, gptMessage]);
-
     } catch (err) {
       console.error("❌ Error connecting to GPT:", err);
       setMessages((prev) => [
@@ -65,37 +65,72 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
     link.click();
   };
 
+  const devToggleButton = (
+    <div
+      style={{
+        position: "absolute",
+        top: "-12px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        backgroundColor: "white",
+        width: "24px",
+        height: "12px",
+        clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+        cursor: "pointer",
+        zIndex: 10
+      }}
+      title="Toggle Dev Tools"
+      onClick={() => setShowDevTools((prev) => !prev)}
+    />
+  );
+
+  const devToolbox = showDevTools && (
+    <div
+      className="dev-toolbox"
+      style={{
+        background: "#222",
+        color: "#eee",
+        padding: "10px",
+        marginBottom: "5px",
+        borderTop: "2px solid #555"
+      }}
+    >
+      <strong>🧪 Dev Toolbox</strong>
+      <button onClick={downloadMarkdown}>⬇ Export Markdown</button>
+    </div>
+  );
+
   return (
-    <div className="chat-section">
-      <div className="chat-tools">
-        <button onClick={downloadMarkdown}>
-          ⬇️ Export Chatlog as Markdown
-        </button>
-      </div>
+    <div className="chat-section-wrapper" style={{ position: "relative" }}>
+      {developerMode && devToggleButton}
+      {developerMode && devToolbox}
 
-      <div className="chat-log">
-        {messages.map((msg, idx) => (
-          <div key={idx} className={`chat-msg ${msg.role}`}>
-            {msg.text}
-          </div>
-        ))}
-      </div>
+      <div className="chat-section">
+        <div className="chat-log">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`chat-msg ${msg.role}`}>
+              {msg.text}
+            </div>
+          ))}
+        </div>
 
-      <div className="chat-input">
-        <textarea
-          placeholder="Type a command or message..."
-          rows="2"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-        />
-        <button onClick={handleSend}>Send</button>
+        <div className="chat-input">
+          <textarea
+            placeholder="Type a command or message..."
+            rows="2"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+          />
+          <button onClick={handleSend}>Send</button>
+        </div>
       </div>
     </div>
   );
 }
+
