@@ -67,6 +67,12 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
 
   return (
     <div className="chat-section">
+      <div className="chat-tools">
+        <button onClick={downloadMarkdown}>
+          ⬇️ Export Chatlog as Markdown
+        </button>
+      </div>
+
       <div className="chat-log">
         {messages.map((msg, idx) => (
           <div key={idx} className={`chat-msg ${msg.role}`}>
