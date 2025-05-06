@@ -19,6 +19,7 @@ FRONTEND_DIR = SRC_DIR / "frontend"
 Security.get_google_drive_key()
 Security.get_gpt_key()
 
+
 def launch_backend():
     print("🚀 Launching FastAPI backend...")
     return subprocess.Popen(
@@ -31,7 +32,7 @@ def launch_backend():
             "--port",
             str(BACKEND_PORT),
             "--log-level",
-            "debug"
+            "debug",
         ],
         cwd=PROJECT_ROOT,
     )

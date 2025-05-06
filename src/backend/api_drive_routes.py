@@ -1,6 +1,7 @@
 """
 api_drive_routes controls communication to google drive
 """
+
 from fastapi import APIRouter, Query, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from src.backend.controller_auth import get_token, delete_token
@@ -9,7 +10,7 @@ from src.backend.controller_drive import (
     search_google_drive,
     read_text_file,
     get_oauth_flow,
-    handle_google_oauth_callback
+    handle_google_oauth_callback,
 )
 
 
@@ -23,7 +24,7 @@ def google_oauth_login():
         auth_url, _ = flow.authorization_url(
             access_type="offline",
             include_granted_scopes="true",
-            prompt="consent"  # ensures refresh_token is returned
+            prompt="consent",  # ensures refresh_token is returned
         )
         print("logging into google drive")
         return RedirectResponse(auth_url)
@@ -61,7 +62,9 @@ async def drive_file(id: str):
 
 
 @router.get("/api/drive/list")
-async def drive_list(request: Request, folderId: str="root"): # Query("root")): # Query(default="root")):
+async def drive_list(
+    request: Request, folderId: str = "root"
+):  # Query("root")): # Query(default="root")):
 
     session_id = request.cookies.get("session_id")
     token = get_token(session_id) if session_id else None
@@ -91,4 +94,3 @@ async def search_drive(q: str):
         return {"results": results}
     except Exception as e:
         return {"error": str(e)}
-

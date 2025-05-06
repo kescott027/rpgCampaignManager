@@ -73,12 +73,12 @@ class DriveSync:
     def ensure_root_folder(self):
         results = (
             self.service.files()
-                .list(
+            .list(
                 q=f"name='{ROOT_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder'",
                 spaces="drive",
                 fields="files(id, name)",
             )
-                .execute()
+            .execute()
         )
         folders = results.get("files", [])
         if folders:
@@ -98,20 +98,20 @@ class DriveSync:
         media = MediaFileUpload(local_path, resumable=True)
         file = (
             self.service.files()
-                .create(body=file_metadata, media_body=media, fields="id")
-                .execute()
+            .create(body=file_metadata, media_body=media, fields="id")
+            .execute()
         )
         return file.get("id")
 
     def download_file(self, drive_filename: str, local_path: str):
         results = (
             self.service.files()
-                .list(
+            .list(
                 q=f"name='{drive_filename}' and '{self.root_folder_id}' in parents",
                 spaces="drive",
                 fields="files(id, name)",
             )
-                .execute()
+            .execute()
         )
         items = results.get("files", [])
         if not items:
@@ -128,12 +128,12 @@ class DriveSync:
     def list_drive_files(self):
         results = (
             self.service.files()
-                .list(
+            .list(
                 q=f"'{self.root_folder_id}' in parents",
                 spaces="drive",
                 fields="files(id, name, modifiedTime)",
             )
-                .execute()
+            .execute()
         )
         return results.get("files", [])
 
@@ -141,7 +141,10 @@ class DriveSync:
 def project_root():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     while True:
-        if any(os.path.exists(os.path.join(current_dir, marker)) for marker in ['.git', 'pyproject.toml', 'setup.py']):
+        if any(
+            os.path.exists(os.path.join(current_dir, marker))
+            for marker in [".git", "pyproject.toml", "setup.py"]
+        ):
             return current_dir
         parent_dir = os.path.dirname(current_dir)
         if parent_dir == current_dir:

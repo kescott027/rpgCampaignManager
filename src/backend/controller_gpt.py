@@ -20,11 +20,7 @@ class GPTProxy:
         self.config_file = config_file
 
         if not os.getenv("OPENAI_API_KEY"):
-            path_components = [
-                self.project_root(),
-                '.security',
-                'openai.env'
-            ]
+            path_components = [self.project_root(), ".security", "openai.env"]
 
             # key_path = os.path.join(*path_components)
             # openai.api_key = json.loads(key_path)["OPENAI_API_KEY"]
@@ -35,7 +31,9 @@ class GPTProxy:
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
         if not openai.api_key:
-            raise ValueError(f"❌ OPENAI_API_KEY is missing. Path attempted: {env_path}")
+            raise ValueError(
+                f"❌ OPENAI_API_KEY is missing. Path attempted: {env_path}"
+            )
 
         self.system_prompt = """
             You are CampaignGPT, a specialized AI assistant for Game Masters.
@@ -83,8 +81,10 @@ class GPTProxy:
         """
         current_dir = os.path.dirname(os.path.abspath(__file__))
         while True:
-            if any(os.path.exists(os.path.join(current_dir, marker)) for marker in
-                   ['.git', 'pyproject.toml', 'setup.py']):
+            if any(
+                os.path.exists(os.path.join(current_dir, marker))
+                for marker in [".git", "pyproject.toml", "setup.py"]
+            ):
                 return current_dir
             parent_dir = os.path.dirname(current_dir)
             if parent_dir == current_dir:

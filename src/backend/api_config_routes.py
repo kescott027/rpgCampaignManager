@@ -3,6 +3,7 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
+
 @router.get("/api/config")
 def read_config():
     try:

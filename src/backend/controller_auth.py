@@ -17,8 +17,8 @@ def drive_login():
         "response_type": "code",
         "scope": "openid https://www.googleapis.com/auth/drive.readonly",
         "access_type": "offline",
-        "prompt": "consent"
-         }
+        "prompt": "consent",
+    }
     print("")
     try:
         response = RedirectResponse(f"{auth_url}?{urlencode(params)}")
@@ -27,11 +27,12 @@ def drive_login():
         print(e)
         raise ValueError(e)
 
+
 def save_token(session_id: str, token: dict):
     """Save a user's OAuth token under their session ID."""
     store = load_sessions()
     store[session_id] = token
-    with open(Path(os.environ('SESSION_STORE')), "w") as f:
+    with open(Path(os.environ("SESSION_STORE")), "w") as f:
         json.dump(store, f)
 
 
@@ -59,6 +60,5 @@ def delete_token(session_id: str):
     if session_id in store:
         del store[session_id]
         # with open(SESSION_STORE, "w") as f:
-        with open(Path(os.environ('SESSION_SORE')), 'w') as f:
+        with open(Path(os.environ("SESSION_SORE")), "w") as f:
             json.dump(store, f)
-

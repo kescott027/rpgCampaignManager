@@ -1,4 +1,3 @@
-
 import os
 import uuid
 import requests
@@ -13,7 +12,7 @@ router = APIRouter()
 
 CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = os.getenv('REDIRECT_URI')
+REDIRECT_URI = os.getenv("REDIRECT_URI")
 # REDIRECT_URI = "http://localhost:8000/api/oauth/callback"
 
 
@@ -27,18 +26,17 @@ def login():
         "response_type": "code",
         "scope": "openid https://www.googleapis.com/auth/drive.readonly",
         "access_type": "offline",
-        "prompt": "consent"
+        "prompt": "consent",
     }
     response = RedirectResponse(f"{auth_url}?{urlencode(params)}")
     print(f"login complete: {response}")
     return response
 
+
 @router.get("/api/oauth/oauth2callback")
 async def oauth2callback(code: str, request: Request):
     print("✅ Requesting OAuth callback:", session_data)
     return await handle_google_oauth_callback(request)
-
-
 
 
 # @router.get("/api/oauth/callback")

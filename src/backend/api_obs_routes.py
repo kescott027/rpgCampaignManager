@@ -6,5 +6,3 @@ from pathlib import Path
 
 
 router = APIRouter()
-
-

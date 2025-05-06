@@ -14,7 +14,7 @@ async def check_secrets():
 
     return {
         "missingOpenAI": not openai_file.is_file(),
-        "missingGoogle": not google_file.is_file()
+        "missingGoogle": not google_file.is_file(),
     }
 
 

@@ -13,6 +13,7 @@ client = OpenAI()
 app = FastAPI()
 proxy = GPTProxy()
 
+
 @router.post("/api/gpt/proxy")
 async def gpt_proxy(req: Request):
     try:
@@ -24,10 +25,7 @@ async def gpt_proxy(req: Request):
             return {"error": "Missing prompt"}
 
         chat_response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
+            model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}]
         )
 
         response_text = chat_response.choices[0].message.content

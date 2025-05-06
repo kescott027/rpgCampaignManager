@@ -59,5 +59,3 @@ def load_image(path: str):
         return FileResponse(abs_path)
     except Exception as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
-
-
