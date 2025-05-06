@@ -58,7 +58,9 @@ async def drive_file(id: str):
         content = read_text_file(id)
         return {"id": id, "content": content}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        import logging
+        logging.error("Error in /api/drive/file endpoint", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "An internal error occurred."})
 
 
 @router.get("/api/drive/list")
@@ -74,7 +76,9 @@ async def drive_list(
         items = list_folder_contents(folder_id=folderId, oauth_token=access_token)
         return {"items": items}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        import logging
+        logging.error("Error in /api/drive/list endpoint", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "An internal error occurred."})
 
 
 @router.get("/api/drive/search")
@@ -93,4 +97,6 @@ async def search_drive(q: str):
         results = search_google_drive(q)
         return {"results": results}
     except Exception as e:
-        return {"error": str(e)}
+        import logging
+        logging.error("Error in /api/drive/search endpoint", exc_info=True)
+        return {"error": "An internal error occurred."}
