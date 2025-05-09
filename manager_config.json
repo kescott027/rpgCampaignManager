@@ -1,7 +1,12 @@
 {
   "secrets_path": ".security",
-  "google_drive_oath": true,
+  "google_drive_oauth": true,
   "google_drive_service": false,
+  "default_drive_scopes": [
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/drive.appdata",
+    "https://www.googleapis.com/auth/drive.appfolder"
+  ],
   "google_drive_api": false,
   "developer_mode": true,
   "gpt_default_prompt": [

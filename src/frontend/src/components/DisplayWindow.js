@@ -6,6 +6,7 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   const [fileContent, setFileContent] = useState("");
   const [fileType, setFileType] = useState("text");
 
+  // 🗂️ Google Drive Listing Renderer
   const renderDriveListing = () => {
     const items = Array.isArray(filePath?.payload) ? filePath.payload : [];
 
@@ -18,20 +19,16 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
               <button
                 onClick={async () => {
                   try {
+                    const url = item.mimeType.includes("folder")
+                      ? `/api/drive/list?folderId=${item.id}`
+                      : `/api/drive/file?id=${item.id}`;
+
+                    const res = await fetch(url, { method: "GET", credentials: "include" });
+                    const data = await res.json();
+
                     if (item.mimeType.includes("folder")) {
-                      //const res = await fetch(`/api/drive/list?folderId=${item.id}`); was ='root'
-                      const res = await fetch(`/api/drive/list?folderId==${item.id}`, {
-                        method: "GET",
-                        credentials: "include" // This sends the session_id cookie
-                      });
-                      const data = await res.json();
                       onFileSelect({ type: "drive-listing", payload: data.items });
                     } else {
-                      const res = await fetch(`/api/drive/file?id=${item.id}`, {
-                        method: "GET",
-                        credentials: "include" // This sends the session_id cookie
-                      });
-                      const data = await res.json();
                       onFileSelect({ type: "drive-file", payload: data.content });
                     }
                   } catch (err) {
@@ -48,12 +45,14 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
     );
   };
 
+  // 📁 Local file loader
   useEffect(() => {
-    if (!filePath || typeof filePath === "object") return;
+    // Only run for string-based local file paths
+    if (!filePath || typeof filePath !== "string") return;
 
     fetch(`/api/localstore/load-file?path=${encodeURIComponent(filePath)}`, {
       method: "GET",
-      credentials: "include" // This sends the session_id cookie
+      credentials: "include"
     })
       .then((res) => res.json())
       .then((data) => {
@@ -66,12 +65,24 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
       });
   }, [filePath]);
 
+  // 🛑 Null check
   if (!filePath) return <div className="display-window">No file selected</div>;
-  if (filePath.type === "drive-listing") return <div className="display-window">{renderDriveListing()}</div>;
-  if (filePath.type === "drive-file") return <div className="display-window">
-    <pre>{filePath.payload}</pre>
-  </div>;
 
+  // 📂 Drive listing handler
+  if (filePath.type === "drive-listing") {
+    return <div className="display-window">{renderDriveListing()}</div>;
+  }
+
+  // 📄 Drive file preview
+  if (filePath.type === "drive-file") {
+    return (
+      <div className="display-window">
+        <pre>{filePath.payload}</pre>
+      </div>
+    );
+  }
+
+  // 🧾 Default file viewer with TabViewer
   return (
     <div className="display-window">
       <TabViewer
@@ -80,7 +91,13 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
         tabs={["Markdown", "JSON", "Images"]}
       >
         {{
-          Markdown: <pre>{fileType === "text" ? fileContent : "[Non-text file]"}</pre>,
+          Markdown: (
+            <pre>
+              {fileType === "text" || fileType === "markdown"
+                ? fileContent
+                : "[Not a Markdown file]"}
+            </pre>
+          ),
           JSON: (
             <pre>
               {fileType === "json"
@@ -91,7 +108,7 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
           Images: fileType === "image" ? (
             <img
               src={`/api/localstore/load-image?path=${encodeURIComponent(filePath)}`}
-              alt="preview"
+              alt={`Image preview: ${filePath}`}
               style={{ maxWidth: "100%" }}
             />
           ) : (

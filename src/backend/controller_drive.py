@@ -1,234 +1,226 @@
-import os
+import logging
+import sys
+import os.path
 import json
-
-# import requests
+import google.auth
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from google.oauth2 import service_account
-from src.backend.controller_security import (
-    get_google_drive_key,
-    get_google_service_account,
-    load_config,
-    get_google_oauth_creds,
-)
-from src.backend.controller_auth import drive_login
-from pathlib import Path
-from fastapi import Request
-from fastapi.responses import HTMLResponse
-from google_auth_oauthlib.flow import Flow
-from google.auth.transport.requests import Request as GoogleRequest
-from src.backend.controller_security import project_root
+from googleapiclient.errors import HttpError
 
 
-SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+class DriveController:
+
+    def __init__(self):
+        self.token_path = os.path.join(SECRETS_PATH, "token.json")
+        self.credentials = os.path.join(SECRETS_PATH, "credentials.json")
+        self.scopes = ["https://www.googleapis.com/auth/drive"]
+        self.creds = None
+        self.service = None
+        self.service_error = None
+        self.login()
 
 
-def load_drive_mode():
-    config = load_config()
-    if config.get("google_drive_oath", False):
-        return "service"
-    if config.get("google_drive_service", False):
-        return "service"
-    if config.get("google_drive_api", False):
-        return "api"
-    return None
+    def login_request(self):
+        try:
+            self.login()
+            return 0
 
+        except Exception as error:
+            logging.error(f"error logging in to google drive: {self.error}")
+            return 1
 
-def get_drive_service():
-    mode = load_drive_mode()
+    def login(self):
 
-    if mode == "service":
-        creds_path = get_google_service_account()
-        creds = service_account.Credentials.from_service_account_file(
-            creds_path, scopes=SCOPES
-        )
-        return build("drive", "v3", credentials=creds)
+        if os.path.exists(self.token_path):
+            self.creds = Credentials.from_authorized_user_file(
+                self.token_path, self.scopes)
 
-    elif mode == "api":
-        api_key = get_google_drive_key()
-        return build("drive", "v3", developerKey=api_key)
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                self.creds.refresh(Request())
 
-    raise EnvironmentError(
-        "❌ No valid Google Drive auth method found. Check 'manager_config.json' or .security/"
-    )
-
-
-def get_drive_service_with_oauth(token: str):
-    """Return a Drive service object authenticated with an OAuth token."""
-    return build(
-        "drive",
-        "v3",
-        credentials=None,
-        developerKey=None,
-        requestBuilder=lambda *args, **kwargs: requests.Request(
-            *args, headers={"Authorization": f"Bearer {token}"}
-        ),
-    )
-
-
-def search_google_drive(query: str, oauth_token=None, max_results=5):
-    """Search files in Drive via query using appropriate auth method."""
-    url = "https://www.googleapis.com/drive/v3/files"
-    params = {
-        "q": f"name contains '{query}' and trashed = false",
-        "fields": "files(id, name, mimeType, modifiedTime)",
-        "pageSize": max_results,
-    }
-
-    headers = {}
-    config = load_config()
-    if oauth_token:
-        headers["Authorization"] = f"Bearer {oauth_token}"
-    elif config.get("google_drive_api"):
-        params["key"] = get_google_drive_key()
-
-    response = requests.get(url, params=params, headers=headers)
-    if not response.ok:
-        raise RuntimeError(
-            f"Google Drive API search failed: {response.status_code} - {response.text}"
-        )
-    return response.json().get("files", [])
-
-
-def list_folder_contents(folder_id="root", oauth_token=None):
-    """
-    List contents of a Google Drive folder using OAuth, API key, or service account.
-    """
-    config = load_config()
-    if config.get("google_drive_oath"):
-        if not oauth_token:
-            oauth_token = drive_login()
-        headers = {"Authorization": f"Bearer {oauth_token}"}
-        url = "https://www.googleapis.com/drive/v3/files"
-        params = {
-            "q": f"'{folder_id}' in parents and trashed = false",
-            "fields": "files(id, name, mimeType, modifiedTime)",
-        }
-        response = requests.get(url, headers=headers, params=params)
-
-    elif config.get("google_drive_service"):
-        # Service account logic — existing
-        from google.oauth2 import service_account
-
-        creds = service_account.Credentials.from_service_account_file(
-            get_google_service_account(), scopes=SCOPES
-        )
-        service = build("drive", "v3", credentials=creds)
-        response = (
-            service.files()
-            .list(
-                q=f"'{folder_id}' in parents and trashed = false",
-                fields="files(id, name, mimeType, modifiedTime)",
-            )
-            .execute()
-        )
-        return response.get("files", [])
-
-    elif config.get("google_drive_api"):
-        # API key fallback
-        api_key = get_google_drive_key()
-        url = "https://www.googleapis.com/drive/v3/files"
-        params = {
-            "key": api_key,
-            "q": f"'{folder_id}' in parents and trashed = false",
-            "fields": "files(id, name, mimeType, modifiedTime)",
-        }
-        response = requests.get(url, params=params)
-        return response.json().get("files", [])
-
-    else:
-        raise ValueError("❌ No valid Google Drive configuration found.")
-
-    if not response.ok:
-        error = f" 🚨 Google API ERROR: {response.status_code} - {response.text}"
-        raise RuntimeError(error)
-
-    else:
-        service = get_drive_service()
-        results = (
-            service.files()
-            .list(
-                q=f"'{folder_id}' in parents and trashed = false",
-                fields="files(id, name, mimeType, modifiedTime)",
-            )
-            .execute()
-        )
-        return results.get("files", [])
-
-
-def read_text_file(file_id: str, oauth_token=None) -> str:
-    """Download text content from Google Drive file using OAuth or fallback."""
-    if oauth_token:
-        headers = {"Authorization": f"Bearer {oauth_token}"}
-        url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media"
-        response = requests.get(url, headers=headers)
-    else:
-        api_key = get_google_drive_key()
-        url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&key={api_key}"
-        response = requests.get(url)
-
-    if response.status_code != 200:
-        raise RuntimeError(
-            f"Google Drive file read error: {response.status_code} - {response.text}"
-        )
-    return response.text
-
-
-def get_oauth_flow():
-    client_secrets_path = (
-        Path(project_root()) / ".security" / "oauth_client_secret.json"
-    )
-    if not client_secrets_path.exists():
-        raise FileNotFoundError("❌ Missing OAuth client secret file.")
-
-    redirect_uri = "http://localhost:8000/api/drive/oauth2callback"
-
-    return Flow.from_client_secrets_file(
-        client_secrets_path,
-        scopes=["https://www.googleapis.com/auth/drive.readonly"],
-        redirect_uri=redirect_uri,
-    )
-
-
-async def handle_google_oauth_callback(request: Request):
-    try:
-        print("starting oauth2 callback")
-        # Extract auth code from query params
-        code = request.query_params.get("code")
-        if not code:
-            return HTMLResponse(
-                content="❌ No code provided in callback URL.", status_code=400
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                self.credentials, self.scopes
             )
 
-        # Initialize flow
-        flow = get_oauth_flow()
+        self.creds = flow.run_local_server(port=0)
 
-        # Fetch token using the code
-        flow.fetch_token(code=code)
+        # Save the credentials for the next run
+        with open(self.token_path, "w") as token:
+            token.write(creds.to_json())
 
-        # Get credentials from flow
-        creds = flow.credentials
+        try:
+            self.service = build("drive", "v3", credentials=creds)
+            self.service_error = None
 
-        # Store session to file
-        session_data = {
-            "token": creds.token,
-            "refresh_token": creds.refresh_token,
-            "token_uri": creds.token_uri,
-            "client_id": creds.client_id,
-            "client_secret": creds.client_secret,
-            "scopes": creds.scopes,
-        }
+        except HttpError as error:
+            logging.error(
+            f"api_drive_controller drive_login generated \
+             an Http error when building credentials: {error}")
 
-        security_dir = Path(project_root()) / ".security"
-        security_dir.mkdir(exist_ok=True)
-        with open(security_dir / "oauth_sessions.json", "w") as f:
-            json.dump(session_data, f)
+             self.service_error = error
+             return None
 
-        print("✅ OAuth token stored successfully.")
-        return HTMLResponse(
-            content="✅ Google Drive connected! You may now close this window.",
-            status_code=200,
-        )
+        except Exceptions as error:
+            logging.error(
+            f"api_drive_controller drive_login generated \
+             an error when building credentials: {error}")
 
-    except Exception as e:
-        print(f"❌ Error in OAuth callback: {e}")
-        return HTMLResponse(content=f"OAuth Error: {e}", status_code=500)
+             self.service_error = error
+             return None
+
+
+    def logout(self):
+        # destroy cached login tokens
+
+        try:
+            self.creds = None
+            self.service = None
+            self.service_error = None
+
+            if os.path.exists(self.token_path):
+            os.remove(self.token_path)
+
+            return 0
+
+        except Exceptions as error:
+
+            logging.error(f"an error occured when attempting to log out: {error}")
+            self.service_error = error
+            return 1
+
+
+    def get_service(self):
+
+        if not self.service:
+            self.login()
+
+        if not self.service and self.service_error:
+            return None, self.service_error
+
+        return self.service, None
+
+    def list_files(self):
+
+        service, error = self.get_service
+
+        if not service or error:
+            return [], error
+
+        try:
+
+            next_token = None
+            files = []
+
+            while True:
+                response = (
+                    service.files()
+                    .list(pageSize=10, fields="nextPageToken, files(id, name)")
+                )
+
+                service.execute(initial_request, page_token=next_token)
+                files.extend(response.get('files', [])
+
+                next_token = response.get('next_token')
+
+                if not next_token:
+                    break # No more pages
+
+            return files, None
+
+        except HttpError as error:
+        
+            logging.error(f"An error occurred: {error}")
+            return [], error
+
+
+    def list_folder_contents(self, folder_id="root"):
+        service, error = self.get_service
+
+        if not service or error:
+            return [], error
+
+        results, error = search_files(query = folder_id in parents)
+
+        return results, error
+
+
+    def search_files(query)
+
+        service, error = self.get_service
+
+        if not service or error:
+            return [], error
+
+        files = []
+        page_token = None
+
+        while True:
+
+            # pylint: disable=maybe-no-member
+            response = (
+                service.files()
+                .list(
+                    q=query,
+                    spaces="drive",
+                    fields="nextPageToken, files(id, name)",
+                    pageToken=page_token,
+                )
+                .execute()
+            )
+            files.extend(response.get('files', [])
+            next_token = response.get('next_token')
+
+            if not next_token:
+                break # No more pages
+
+          return files, None
+
+      except HttpError as error:
+
+        logging(f"An error occurred: {error}")
+        return None, error
+
+
+    def download_file(self, real_file_id):
+        """Downloads a file
+        Args:
+        real_file_id: ID of the file to download
+        Returns : IO object with location.
+
+        Load pre-authorized user credentials from the environment.
+        TODO(developer) - See https://developers.google.com/identity
+        for guides on implementing OAuth2 for the application.
+        """
+        logging.info(f"download requested for file {real_file_id}")
+
+        service, error = self.get_service
+
+        if not service or error:
+            logging.error(f"download failed due to auth error: {error}")
+            return error
+
+        try:
+            file_id = real_file_id
+
+            # pylint: disable=maybe-no-member
+            request = service.files().get_media(fileId=file_id)
+            file = io.BytesIO()
+            downloader = MediaIoBaseDownload(file, request)
+            done = False
+
+            while done is False:
+                status, done = downloader.next_chunk()
+                logging.info(f"Download {int(status.progress() * 100)}.")
+            return None
+
+          except HttpError as error:
+
+            logging.error(f"An error occurred: {error}")
+            return error
+
+
+if __name__ == "__main__:

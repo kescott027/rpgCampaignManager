@@ -152,6 +152,36 @@ def project_root():
         current_dir = parent_dir
 
 
+def write_file(file):
+
+    try:
+        with open(filename, "w", encoding="utf-8") as file:
+            file.write(data)
+
+        logging.info(f"Successfully wrote data to '{filename}'")
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+
+
+def open_file(file):
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            content = file.read()
+
+        logging.info(f"opened file {file_path} in read mode")
+        return content
+
+    except FileNotFoundError:
+        logging.error(f"Error: File not found at path: {file_path}")
+        return None
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+        return None
+
+
 # === Example Usage ===
 if __name__ == "__main__":
     sync = DriveSync()

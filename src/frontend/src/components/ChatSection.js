@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { getDeveloperMode } from "../utils/getConfig";
+import React, { useState } from "react";
 
-export default function ChatSection({ sessionName = "Untitled Session", filePath = null }) {
+export default function ChatSection({
+                                      sessionName = "Untitled Session",
+                                      filePath = null,
+                                      devMode = false
+                                    }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
-  const [developerMode, setDeveloperMode] = useState(false);
   const [showDevTools, setShowDevTools] = useState(false);
-
-  useEffect(() => {
-    getDeveloperMode().then(setDeveloperMode);
-  }, []);
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    if (developerMode) {
+    if (devMode) {
       setMessages((prev) => [
         ...prev,
         { role: "debug", text: `📤 Sending prompt: ${input}` }
@@ -23,7 +21,6 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
 
     const userMessage = { role: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
-    console.log("📤 Sending user input:", input);
 
     try {
       const res = await fetch("/api/gpt/proxy", {
@@ -32,7 +29,6 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
         body: JSON.stringify({ prompt: input, session: sessionName })
       });
 
-      console.log("📥 Raw response:", res);
       const contentType = res.headers.get("content-type") || "";
       if (!res.ok || !contentType.includes("application/json")) {
         const text = await res.text();
@@ -40,7 +36,6 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
       }
 
       const data = await res.json();
-      console.log("✅ GPT response received:", data);
       const gptMessage = { role: "gpt", text: data.response };
       setMessages((prev) => [...prev, gptMessage]);
     } catch (err) {
@@ -56,7 +51,9 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
 
   const downloadMarkdown = async () => {
     if (!filePath) return;
-    const res = await fetch(`/api/gpt/export-chatlog?path=${encodeURIComponent(filePath.path)}`);
+    const res = await fetch(
+      `/api/gpt/export-chatlog?path=${encodeURIComponent(filePath.path)}`
+    );
     const data = await res.json();
     const blob = new Blob([data.markdown], { type: "text/markdown" });
     const link = document.createElement("a");
@@ -84,28 +81,34 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
     />
   );
 
-  const devToolbox = showDevTools && (
-    <div
-      className="dev-toolbox"
-      style={{
-        background: "#222",
-        color: "#eee",
-        padding: "10px",
-        marginBottom: "5px",
-        borderTop: "2px solid #555"
-      }}
-    >
-      <strong>🧪 Dev Toolbox</strong>
-      <button onClick={downloadMarkdown}>⬇ Export Markdown</button>
-    </div>
-  );
+  const devToolbox =
+    devMode &&
+    showDevTools && (
+      <div
+        className="dev-toolbox"
+        style={{
+          background: "#222",
+          color: "#eee",
+          padding: "10px",
+          marginBottom: "5px",
+          borderTop: "2px solid #555"
+        }}
+      >
+        <strong>🧪 Dev Toolbox</strong>
+        <button onClick={downloadMarkdown}>⬇ Export Markdown</button>
+      </div>
+    );
 
   return (
     <div className="chat-section-wrapper" style={{ position: "relative" }}>
-      {developerMode && devToggleButton}
-      {developerMode && devToolbox}
-
+      {devMode && devToggleButton}
+      {devToolbox}
       <div className="chat-section">
+        <div className="chat-tools">
+          <button onClick={downloadMarkdown}>
+            ⬇️ Export Chatlog as Markdown
+          </button>
+        </div>
         <div className="chat-log">
           {messages.map((msg, idx) => (
             <div key={idx} className={`chat-msg ${msg.role}`}>
@@ -113,7 +116,6 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
             </div>
           ))}
         </div>
-
         <div className="chat-input">
           <textarea
             placeholder="Type a command or message..."
@@ -133,4 +135,3 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
     </div>
   );
 }
-
