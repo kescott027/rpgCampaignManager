@@ -28,17 +28,11 @@ class DriveController:
 
     def create_service(self):
 
-        token_path = self.token_file
-        scopes = self.scopes
-        creds = self.credentials
-
-        if token_path and os.path.exists(token_path):
+        if self.token_file and os.path.exists(self.token_file):
             try:
 
-                creds = Credentials.from_authorized_user_file(
-                    token_path, scopes)
-
-                self.credentials = creds
+                self.credentials = Credentials.from_authorized_user_file(
+                    self.token_file, self.scopes)
 
             except json.decoder.JSONDecodeError:
                 logging.error(
@@ -47,27 +41,24 @@ class DriveController:
                 logging.error(
                     "key file is a  Nonetype object, continue to creds create_service")
 
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
+        if not self.credentials or not self.credentials.valid:
+            if self.credentials and self.credentials.expired and self.credentials.refresh_token:
+                self.credentials.refresh(Request())
 
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     self.credentials_file, self.scopes
                 )
 
-                creds = flow.run_local_server(port=0)
-
-        self.credentials = creds
+                self.credentials = flow.run_local_server(port=0)
 
         # Save the credentials for the next run
-        with open(token_path, "w") as token:
+        with open(self.token_file, "w") as token:
             json.dump(self.token_file, token, indent=4)
 
         try:
-            service = build("drive", "v3", credentials=creds)
-            self.service = service
-            return service
+            self.service = build("drive", "v3", credentials=creds)
+            return self.service
 
         except HttpError as error:
             logging.error(
@@ -108,7 +99,7 @@ class DriveController:
         logging.info('service requested, verifying service exists...')
         if not self.service:
             logging.info("no defined service, calling create service method")
-            service = self.create_service()
+            self.service = self.create_service()
 
             if not self.service:
                 logging.error('Service not found after a call to src.backdend.controller_drive.get_service')
@@ -117,9 +108,14 @@ class DriveController:
         logging.info('service created')
         return self.service
 
+
     def list_files(self, folder='rpgCampaignManager'):
 
-        service = build("drive", "v3", credentials=self.credentials)
+        if not self.service:
+            self.service = build("drive", "v3", credentials=self.credentials)
+
+        service = self.service
+
         if not service:
             raise ValueError('controller_drive.list_files failed to retrive files from drive')
 
@@ -202,17 +198,14 @@ class DriveController:
             while True:
 
                 # pylint: disable=maybe-no-member
-                # results = service.files().list(q=query).execute()
-                response = (
-                    service.files()
-                    .list(
-                        q=query
-                        #spaces="drive",
-                        # fields="nextPageToken, files(id, name)",
-                        # pageToken=page_token,
-                    )
-                    .execute()
+                response = (service.files().list(
+                    q=query,
+                    spaces="drive",
+                    fields="nextPageToken, files(id, name)",
+                    pageToken=page_token,
+                    ).execute()
                 )
+
                 files.extend(response.get('files', []))
                 next_token = response.get('next_token')
 
@@ -285,5 +278,4 @@ class DriveController:
 
 
 if __name__ == "__main__":
-
     pass
