@@ -81,12 +81,26 @@ async def drive_file(request: Request, file_id: str):
         logging.error("❌ Failed to read file:", e)
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-
-@router.get("/api/drive/list")
-async def google_drive_list(request: Request, folderId: str = "root"):
+@router.get("/api/drive/listid")
+async def google_drive_list(request: Request, folderId: str = None, by_id=True):
 
     # results, error = DRIVE_CONTROLLER.list_folder_contents()
-    results, error = DRIVE_CONTROLLER.list_files()
+    results, error = DRIVE_CONTROLLER.list_files(folderId, by_id=True)
+
+    if error:
+
+        logging.error(f"error retrieving file list: {error}")
+        return []
+
+    return results
+
+
+
+@router.get("/api/drive/list")
+async def google_drive_list(request: Request, folderId: str = "root", by_id=False):
+
+    # results, error = DRIVE_CONTROLLER.list_folder_contents()
+    results, error = DRIVE_CONTROLLER.list_files(folderId)
 
     if error:
 

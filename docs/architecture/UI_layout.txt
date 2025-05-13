@@ -1,8 +1,11 @@
-+-------------------------------+
-|      Display Window (Top)    |
-|-------------------------------|
-|     Chat Window (Bottom)     |
-| [Resizable] Input + Response |
-+-------------------------------+
-| Sidebar: Search & Navigation |
-+-------------------------------+
++---+-----------------------------+
+| S  |  Display Window (Top)      |
+| I  |                            |
+| D  |  Displays notes and images |
+| E  |                            |
+| B  |----------------------------+
+| A  |Chat Window (Bottom)        |
+| R  |[Resizable] Input + Response|
+|----+----------------------------+
+
+Sidebar contains logo, search and directory handling

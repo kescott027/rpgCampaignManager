@@ -1,8 +1,23 @@
-/src
-├── components/
-│   ├── Sidebar.js
-│   ├── DisplayWindow.js
-│   ├── ChatSection.js
-│   ├── TabViewer.js
-├── App.js
-└── index.html
+/src/frontend/src
+              ├── components/
+              │   ├── ChatSection.js
+              │   ├── DisplayWindow.js
+              │   ├── FileTree.js
+              │   ├── SecurityConfigModal.js
+              │   ├── Sidebar.js
+              │   ├── TabViewer.js
+              │   ├── TabViewer.module.css
+              ├── hooks/
+              │   ├── useStartupMessages.js
+              ├── utils/
+              │   ├── checkSecrets.js
+              │   ├── detectFileTab.js
+              │   ├── detectInitialTab.js
+              │   ├── devLogger.js
+              │   ├── fileHelper.js
+              │   ├── getConfig.js
+              │   ├── handleUICommands.js
+              │   ├── parseUiCommands.js
+              ├── App.js
+              ├── App.css
+              └── index.html

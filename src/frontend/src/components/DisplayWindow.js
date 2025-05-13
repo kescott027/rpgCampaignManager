@@ -9,7 +9,9 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   // 🗂️ Google Drive Listing Renderer
   const renderDriveListing = () => {
     const items = Array.isArray(filePath?.payload) ? filePath.payload : [];
-
+    if (!Array.isArray(filePath?.payload)) {
+      return <div className="display-window">📛 Invalid Drive Listing Format</div>;
+    }
     return (
       <div>
         <h3>📂 Google Drive Folder</h3>
@@ -19,14 +21,15 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
               <button
                 onClick={async () => {
                   try {
-                    const url = item.mimeType.includes("folder")
-                      ? `/api/drive/list?folderId=${item.id}`
+                    const isFolder = item.mimeType?.includes("folder") ?? true;
+                    const url = isFolder
+                      ? `/api/drive/listid?folderId=${item.id}`
                       : `/api/drive/file?id=${item.id}`;
 
                     const res = await fetch(url, { method: "GET", credentials: "include" });
                     const data = await res.json();
 
-                    if (item.mimeType.includes("folder")) {
+                    if (isFolder) {
                       onFileSelect({ type: "drive-listing", payload: data.items });
                     } else {
                       onFileSelect({ type: "drive-file", payload: data.content });

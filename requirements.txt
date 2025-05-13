@@ -2,14 +2,14 @@
 python-dotenv>=1.0.0
 requests>=2.31.0
 fastapi>=0.115.12
-
+playwright>=1.52.0
 
 # === OpenAI / GPT Communication ===
-openai>=1.0.0
+openai==1.78.1
 
 # === Google Drive API Integration ===
 google-api-python-client>=2.105.0
-google-auth>=2.24.0
+google-auth==2.40.1
 google-auth-oauthlib>=1.2.0
 
 # === Markdown / YAML / JSON Utilities ===
