@@ -1,9 +1,20 @@
 {
+  "developer_mode": true,
   "secrets_path": ".security",
-  "google_drive_oath": true,
+  "local_assets_directory": "assets",
+  "local_file_store_root": "my_campaigns",
+  "my_campaigns": [
+    "Forgesworn",
+    "Dungeon"
+  ],
+  "google_drive_oauth": true,
   "google_drive_service": false,
   "google_drive_api": false,
-  "developer_mode": true,
+  "default_drive_scopes": [
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/drive.appdata",
+    "https://www.googleapis.com/auth/drive.appfolder"
+  ],
   "gpt_default_prompt": [
     "You are CampaignGPT, a specialized AI assistant for Game Masters.",
     "You use narrative tools like ENTITY INDEX, STATUS INDEX, and RELATIONSHIP INDEX.",

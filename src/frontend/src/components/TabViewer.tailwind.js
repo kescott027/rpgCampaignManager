@@ -1,14 +1,12 @@
-import React from "react";
-import styles from "./TabViewer.module.css";
-
 export default function TabViewer({ activeTab, onTabChange, tabs = ["Markdown", "JSON", "Images"], children }) {
   return (
-    <div className={styles.container}>
-      <div className={styles.tabBar}>
+    <div className="p-4">
+      <div className="flex mb-2">
         {tabs.map(tab => (
           <button
             key={tab}
-            className={`${styles.tabButton} ${tab === activeTab ? styles.activeTab : ""}`}
+            className={`px-3 py-1 rounded border
+                        ${tab === activeTab ? "bg-gray-800 text-white font-bold" : "bg-gray-200 text-black"}`}
             onClick={() => onTabChange(tab)}
           >
             {tab}

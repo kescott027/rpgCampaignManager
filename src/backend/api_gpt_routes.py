@@ -5,12 +5,15 @@ from fastapi.responses import JSONResponse
 from openai import OpenAI
 from pathlib import Path
 from .controller_gpt import GPTProxy
-from .controller_security import secure_path
+from .controller_security import secure_path, GptLoader, get_gpt_key
+from src.backend.controller_configuration import Configuration as Config
+
 
 router = APIRouter()
 
-client = OpenAI()
-app = FastAPI()
+CONFIG = Config()
+client = OpenAI(api_key=get_gpt_key())
+# app = FastAPI()
 proxy = GPTProxy()
 
 
@@ -57,7 +60,7 @@ def export_chatlog_as_md(path: str):
         return JSONResponse(status_code=400, content={"error": str(e)})
 
 
-@app.post("/chat")
+@router.post("/chat")
 async def chat(request: Request):
     data = await request.json()
     message = data.get("message", "")

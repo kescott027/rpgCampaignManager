@@ -1,9 +1,13 @@
+import logging
+import os
 import subprocess
 import webbrowser
 import time
 import sys
 from pathlib import Path
 import src.backend.controller_security as Security
+
+logging.basicConfig(level=logging.DEBUG)
 
 # Constants
 BACKEND_PORT = 8000
@@ -15,13 +19,11 @@ SRC_DIR = PROJECT_ROOT / "src"
 BACKEND_ENTRY = SRC_DIR / "backend" / "api_service.py"
 FRONTEND_DIR = SRC_DIR / "frontend"
 
-
-Security.get_google_drive_key()
-Security.get_gpt_key()
+os.environ['PROJECT_ROOT'] = str(PROJECT_ROOT)
 
 
 def launch_backend():
-    print("🚀 Launching FastAPI backend...")
+    logging.info("🚀 Launching FastAPI backend...")
     return subprocess.Popen(
         [
             sys.executable,
@@ -39,18 +41,18 @@ def launch_backend():
 
 
 def launch_frontend():
-    print("🌐 Launching React frontend (npm start)...")
+    logging.info("🌐 Launching React frontend (npm start)...")
     return subprocess.Popen(["npm", "start"], cwd=str(FRONTEND_DIR))
 
 
 def open_browser():
     time.sleep(2)
-    print(f"🔗 Opening {FRONTEND_URL}")
+    # logging.info(f"🔗 Opening {FRONTEND_URL}")
     webbrowser.open(FRONTEND_URL)
 
 
 if __name__ == "__main__":
-    print("🧙 Launching Campaign Manager UI + Backend")
+    logging.info("🧙 Launching Campaign Manager UI + Backend")
 
     backend_proc = launch_backend()
     frontend_proc = launch_frontend()
@@ -60,6 +62,13 @@ if __name__ == "__main__":
         backend_proc.wait()
         frontend_proc.wait()
     except KeyboardInterrupt:
-        print("\n🛑 Shutting down...")
+        logging.info("\n🛑 Shutting down...")
+
+        # remove drive session token
+        # token_path = os.path.join(".security", "token.json")
+        # if os.path.exists(token_path):
+        #     os.remove(token_path)
+
+        #gracefully shut down backend and frontend
         backend_proc.terminate()
         frontend_proc.terminate()
