@@ -58,17 +58,15 @@ class Configuration:
         return json_file
 
 
-    def set_secrets_path(self, secret, default=None):
-        logging.debug(f'Setting secrets path for {secret} secret...')
-        secret_path = os.path.join(self.secrets_path, secret)
+    def set_secrets_path(self, stored_data, default=None):
+        logging.debug(f'Setting path for {stored_data}...')
+        store_path = os.path.join(self.secrets_path, stored_data)
 
-        if os.path.exists(secret_path):
-            logging.debug(f"{secret} found at path {secret_path}.")
-            return secret_path
+        if os.path.exists(store_path):
+            logging.debug(f"{stored_data} found at path {store_path}.")
+            return store_path
 
-        logging.error(f"Could not locate secret {secret} \
-            in location {secret_path}.  Validate the secret\'s location \
-            and reload the secret")
+        logging.error(f"Could not locate key for {stored_data} in location {store_path}.  Validate the secret's location and reload the secret")
 
         return default
 

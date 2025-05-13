@@ -29,27 +29,28 @@ class GptLoader:
 
     def load_gpt_key(self):
 
-        key_path = self.key_path
+        store_path = self.key_path
 
-        if not os.path.exists(key_path):
-            logging.error(f"Error - path {key_path} is not found. \
+        if not os.path.exists(store_path):
+            logging.error(f"Error - path {store_path} is not found. \
                 verify the key location and reload.")
             return None
 
-        gpt_key_json = json_loader(key_path)
+        gpt_json = json_loader(store_path)
 
-        if not gpt_key_json:
+        if not gpt_json:
             logging.error(f"controller_security.GptLoader could not \
                 load GPT key from {self.key_path}.")
             return None
 
-        self.key = gpt_key_json.get("OPENAI_API_KEY", None)
+        self.key = gpt_json.get("OPENAI_API_KEY", None)
         if not self.key:
-            raise ValueError("unable to retrieve OPENAI_API_KEY from json")
+            logging.error("unable to retrieve OPENAI_API_KEY from json")
+            return
 
         os.environ['OPENAI_API_KEY'] = self.key
 
-        return # gpt_key
+        return
 
 
 def secure_path(path: str) -> str:

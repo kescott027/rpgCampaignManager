@@ -113,7 +113,8 @@ async def search_drive(request: Request, q: str):
         return {"results": results}
 
     except Exception as e:
-        logging.error("❌ Drive search failed:", e)
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logging.error("❌ Drive search failed:", exc_info=True)
+        error_message = f"An error occured while searching, check parameters and try again."
+        return JSONResponse(status_code=500, content={"error": error_message})
 
 

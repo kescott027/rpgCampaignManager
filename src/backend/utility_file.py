@@ -13,14 +13,14 @@ logging.basicConfig(level=logging.DEBUG)
 def json_loader(file_path, op='r'):
     logging.debug(f'utility_file.json_loader starting...')
     try:
-        logging.info(f'json loader loading from path {file_path}')
+        logging.debug(f'json loader loading from path {file_path}')
         if not os.path.exists(file_path):
             logging.error(f"utility_file.json_loader is unable to find file {file_path}.  No object returned")
 
         with open(file_path, op) as f:
-            logging.info(f"utility_file.json_loader: opening file {file_path}")
+            logging.debug(f"utility_file.json_loader: opening file {file_path}")
             json_file = json.load(f)
-            logging.info(f"json file {file_path} complete: {json_file}")
+            logging.debug(f"json file {file_path} complete: {json_file}")
 
             return json_file
 
