@@ -1,10 +1,55 @@
 import os
 import openai
 import json
-from dotenv import load_dotenv
+import logging
+from pydantic import BaseModel
+from src.backend.controller_configuration import Configuration as Config
+from src.backend.utility_file import json_loader
 from .controller_localstore import project_root
 from typing import Optional
 from pathlib import Path
+
+
+class SecretPayload(BaseModel):
+    openaiKey: Optional[str] = None
+    googleKey: Optional[str] = None
+
+
+class SecretCheckResponse(BaseModel):
+    missingOpenAI: bool
+    missingGoogle: bool
+
+
+class GptLoader:
+    def __init__(self):
+        self.config = Config()
+        self.key_path = self.config.gpt_path
+        self.key = ""
+        self.load_gpt_key()
+
+    def load_gpt_key(self):
+
+        key_path = self.key_path
+
+        if not os.path.exists(key_path):
+            logging.error(f"Error - path {key_path} is not found. \
+                verify the key location and reload.")
+            return None
+
+        gpt_key_json = json_loader(key_path)
+
+        if not gpt_key_json:
+            logging.error(f"controller_security.GptLoader could not \
+                load GPT key from {self.key_path}.")
+            return None
+
+        self.key = gpt_key_json.get("OPENAI_API_KEY", None)
+        if not self.key:
+            raise ValueError("unable to retrieve OPENAI_API_KEY from json")
+
+        os.environ['OPENAI_API_KEY'] = self.key
+
+        return # gpt_key
 
 
 def secure_path(path: str) -> str:
@@ -16,36 +61,12 @@ def secure_path(path: str) -> str:
 
 
 def load_config():
-    config_path = os.path.join(project_root(), "manager_config.json")
-    ### troubleshooting
 
-    error_message = f"validating config_path; {config_path}"
-    raise ValueError(config_path)
-    if os.path.exists(config_path):
-        with open(config_path, "r") as f:
-            config = json.load(f)
-
-        if config["google_drive_oauth"]:
-            get_google_oauth_creds
-        elif config["google_drive_api"]:
-            get_google_drive_key
-        elif config["google_drive_service"]:
-            get_google_service_account()
-        else:
-            get_google_oauth_creds
-        return config
-    return {}
+    config = Config()
+    return config.current_config
 
 
 def get_gpt_key():
-    env_path = os.path.join(project_root(), ".security", "openai.env")
 
-    if not os.getenv("OPENAI_API_KEY"):
-        load_dotenv(env_path)
-
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-
-    if not openai.api_key:
-        raise ValueError(f"❌ OPENAI_API_KEY is missing. Path attempted: {env_path}")
-
-    return openai.api_key
+    gpt = GptLoader()
+    return gpt.key

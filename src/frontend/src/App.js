@@ -10,9 +10,11 @@ export default function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [initialTab, setInitialTab] = useState("Markdown");
   const [devMode, setDevMode] = useState(false);
+  // const debug = require ('debug')('my_module')
+
 
   useEffect(() => {
-    fetch("/config/manager_config.json")
+    fetch("/manager_config.json")
       .then((res) => res.json())
       .then((config) => setDevMode(config["developer mode"] === true));
   }, []);

@@ -6,7 +6,8 @@ from datetime import datetime
 from typing import List
 from pydantic import BaseModel
 from typing import Optional
-
+from src.backend.controller_configuration import Configuration as Config
+from src.backend.utility_file import json_loader, project_root
 
 class ChatRequest(BaseModel):
     message: str
@@ -15,20 +16,12 @@ class ChatRequest(BaseModel):
 
 
 class GPTProxy:
-    def __init__(self, config_file=None):
+    def __init__(self):
+        self.config = Config()
+        self.gpt_key_path = self.config.gpt_path
+        self.api_key = json_loader(self.gpt_key_path, 'r')['OPENAI_API_KEY']
 
-        self.config_file = config_file
-
-        if not os.getenv("OPENAI_API_KEY"):
-            path_components = [self.project_root(), ".security", "openai.env"]
-
-            # key_path = os.path.join(*path_components)
-            # openai.api_key = json.loads(key_path)["OPENAI_API_KEY"]
-            # openai.api_key = os.getenv("OPENAI_API_KEY")
-            load_dotenv(os.path.join(*path_components))
-            # load_dotenv(dotenv_path=key_path)
-
-        openai.api_key = os.getenv("OPENAI_API_KEY")
+        openai.api_key = self.api_key
 
         if not openai.api_key:
             raise ValueError(
