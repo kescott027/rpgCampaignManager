@@ -78,7 +78,7 @@ async def drive_file(request: Request, file_id: str):
         return {"id": id, "content": content}
 
     except Exception as e:
-        print("❌ Failed to read file:", e)
+        logging.error("❌ Failed to read file:", e)
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
@@ -113,7 +113,7 @@ async def search_drive(request: Request, q: str):
         return {"results": results}
 
     except Exception as e:
-        print("❌ Drive search failed:", e)
+        logging.error("❌ Drive search failed:", e)
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
