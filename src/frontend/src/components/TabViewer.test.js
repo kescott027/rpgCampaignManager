@@ -1,29 +1,31 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import TabViewer from 'components/TabViewer';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import TabViewer from "components/TabViewer";
 
-describe('TabViewer', () => {
-  const mockTabs = ['Tab A', 'Tab B'];
+describe("TabViewer", () => {
+  const mockTabs = ["Tab A", "Tab B"];
   const mockContent = {
-    'Tab A': <div>Content A</div>,
-    'Tab B': <div>Content B</div>
+    "Tab A": <div>Content A</div>,
+    "Tab B": <div>Content B</div>
   };
 
-  test('displays default tab content', () => {
+  test("displays default tab content", () => {
     render(
       <TabViewer
         tabs={mockTabs}
         activeTab="Tab A"
-        onTabChange={() => {}}
+        onTabChange={() => {
+        }}
       >
         {mockContent}
       </TabViewer>
     );
 
-    expect(screen.getByText(/Content A/i)).toBeInTheDocument();
+    // This checks that the correct content is visible in the active tab
+    expect(screen.getByText("Content A")).toBeInTheDocument();
   });
 
-  test('calls onTabChange when a tab is clicked', () => {
+  test("calls onTabChange when a tab is clicked", () => {
     const mockChange = jest.fn();
 
     render(
@@ -36,10 +38,26 @@ describe('TabViewer', () => {
       </TabViewer>
     );
 
-    const tabB = screen.getByRole('button', { name: /Tab B/i });
+    const tabB = screen.getByRole("button", { name: /Tab B/i });
     fireEvent.click(tabB);
 
-    expect(mockChange).toHaveBeenCalledWith('Tab B');
+    expect(mockChange).toHaveBeenCalledWith("Tab B");
+  });
+
+  test("renders fallback message if active tab has no content", () => {
+    render(
+      <TabViewer
+        tabs={mockTabs}
+        activeTab="Nonexistent Tab"
+        onTabChange={() => {
+        }}
+      >
+        {mockContent}
+      </TabViewer>
+    );
+
+    expect(
+      screen.getByText(/🪹 No content for "Nonexistent Tab" tab./i)
+    ).toBeInTheDocument();
   });
 });
-
