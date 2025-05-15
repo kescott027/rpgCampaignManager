@@ -1,39 +1,29 @@
-import { useEffect, useState } from "react";
-import { checkMissingSecrets } from "../utils/checkSecrets";
+import { useState, useEffect } from "react";
 
-export function useStartupMessages(sessionName = "Untitled Session") {
-  const [messages, setMessages] = useState([]);
-  const [missingKeyNotice, setMissingKeyNotice] = useState(false);
+export function useStartupMessages() {
+  const [message, setMessage] = useState("Starting session...");
+  const [devMode, setDevMode] = useState(false);
 
   useEffect(() => {
-    const defaultMsg = {
-      role: "gpt",
-      text: `rpgCampaignManager – session ${sessionName} – start chatting to begin.`
-    };
+    async function fetchConfig() {
+      try {
+        const res = await fetch("/manager_config.json");
+        const config = await res.json();
 
-    checkMissingSecrets().then((res) => {
-      const startupMessages = [defaultMsg];
+        const sessionName = config.sessionName || "Untitled Session";
+        const isDev = config["developer mode"] === true;
 
-      if (res.anyMissing) {
-        startupMessages.push({
-          role: "gpt",
-          text: `⚠️ Missing API Keys
-
-rpgCampaignManager is an AI-powered and cloud-enabled campaign management tool.
-
-This app requires API keys for:
-
-- OpenAI: https://platform.openai.com/account/api-keys
-- Google Cloud Drive: https://developers.google.com/drive/api/guides/authentication
-
-To securely enter your keys, type: **configure security**`
-        });
+        setMessage(`Welcome to ${sessionName}`);
+        setDevMode(isDev);
+      } catch (err) {
+        console.error("❌ Failed to load config:", err);
+        setMessage("Welcome to Untitled Session");
+        setDevMode(false);
       }
+    }
 
-      setMessages(startupMessages);
-      setMissingKeyNotice(res.anyMissing);
-    });
-  }, [sessionName]);
+    fetchConfig();
+  }, []);
 
-  return { messages, setMessages, missingKeyNotice };
+  return { message, devMode };
 }

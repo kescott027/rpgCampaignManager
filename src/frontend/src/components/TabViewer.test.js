@@ -16,23 +16,12 @@ describe('TabViewer', () => {
         activeTab="Tab A"
         onTabChange={() => {}}
       >
-        {mockContent['Tab A']}
+        {mockContent}
       </TabViewer>
     );
 
     expect(screen.getByText(/Content A/i)).toBeInTheDocument();
   });
-
-  /*
-  Commenting this out temporarily until existing test set completes.
-  test('returns PDF, Audio, and Video types correctly', () => {
-  expect(detectFileTab('guide.pdf')).toBe('PDF');
-  expect(detectFileTab('theme.mp3')).toBe('Audio');
-  expect(detectFileTab('trailer.webm')).toBe('Video');
-  });
-  */
-
-
 
   test('calls onTabChange when a tab is clicked', () => {
     const mockChange = jest.fn();
@@ -43,7 +32,7 @@ describe('TabViewer', () => {
         activeTab="Tab A"
         onTabChange={mockChange}
       >
-        {mockContent['Tab A']}
+        {mockContent}
       </TabViewer>
     );
 
@@ -53,3 +42,4 @@ describe('TabViewer', () => {
     expect(mockChange).toHaveBeenCalledWith('Tab B');
   });
 });
+

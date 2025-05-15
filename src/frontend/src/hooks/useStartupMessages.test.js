@@ -1,44 +1,39 @@
-import { renderHook } from "@testing-library/react-hooks";
+import { renderHook } from "@testing-library/react";
 import { useStartupMessages } from "./useStartupMessages";
 
-// Mock the API call
-jest.mock("../utils/checkSecrets", () => ({
-  checkMissingSecrets: jest.fn()
-}));
-
-import { checkMissingSecrets } from "../utils/checkSecrets";
+// Mock the config fetch
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    json: () =>
+      Promise.resolve({
+        "developer mode": true,
+        sessionName: "GM Session"
+      })
+  })
+);
 
 describe("useStartupMessages", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  test("loads default startup message when no keys are missing", async () => {
-    checkMissingSecrets.mockResolvedValueOnce({ anyMissing: false });
+  test("returns default session name and developer mode", async () => {
+    const { result, waitForNextUpdate } = renderHook(() => useStartupMessages());
 
-    const { result, waitForNextUpdate } = renderHook(() =>
-      useStartupMessages("Test Session")
-    );
-
+    // Wait for useEffect fetch to complete
     await waitForNextUpdate();
 
-    expect(result.current.messages.length).toBe(1);
-    expect(result.current.messages[0].text).toMatch(/rpgCampaignManager – session Test Session/i);
-    expect(result.current.missingKeyNotice).toBe(false);
+    expect(result.current.message).toContain("Welcome to GM Session");
+    expect(result.current.devMode).toBe(true);
   });
 
-  test("loads startup message and missing key warning when keys are missing", async () => {
-    checkMissingSecrets.mockResolvedValueOnce({ anyMissing: true });
+  test("handles fetch failure gracefully", async () => {
+    fetch.mockImplementationOnce(() => Promise.reject("API down"));
 
-    const { result, waitForNextUpdate } = renderHook(() =>
-      useStartupMessages("Test Session")
-    );
-
+    const { result, waitForNextUpdate } = renderHook(() => useStartupMessages());
     await waitForNextUpdate();
 
-    expect(result.current.messages.length).toBe(2);
-    expect(result.current.messages[0].text).toMatch(/session Test Session/i);
-    expect(result.current.messages[1].text).toMatch(/Missing API Keys/i);
-    expect(result.current.missingKeyNotice).toBe(true);
+    expect(result.current.message).toContain("Welcome to Untitled Session");
+    expect(result.current.devMode).toBe(false);
   });
 });
