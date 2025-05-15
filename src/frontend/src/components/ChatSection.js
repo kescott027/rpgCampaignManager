@@ -11,6 +11,8 @@ export default function ChatSection({
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [showDevTools, setShowDevTools] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(null);
 
   const sendToBackend = async (payload, endpoint) => {
     try {
@@ -42,6 +44,9 @@ export default function ChatSection({
       const feedback = res?.response || res?.status || JSON.stringify(res);
       setMessages(prev => [...prev, { role: "system", text: feedback }]);
       setInput("");
+      setHistory((prev) => [...prev, input.trim()]);
+      setHistoryIndex(null);
+
       return;
     }
 
@@ -136,6 +141,22 @@ export default function ChatSection({
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSend();
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                if (history.length > 0) {
+                  const newIndex = historyIndex === null
+                    ? history.length - 1
+                    : Math.max(0, historyIndex - 1);
+                  setInput(history[newIndex]);
+                  setHistoryIndex(newIndex);
+                }
+              } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                if (history.length > 0 && historyIndex !== null) {
+                  const newIndex = Math.min(history.length - 1, historyIndex + 1);
+                  setInput(history[newIndex] || "");
+                  setHistoryIndex(newIndex === history.length - 1 ? null : newIndex);
+                }
               }
             }}
           />

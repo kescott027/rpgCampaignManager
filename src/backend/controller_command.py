@@ -4,6 +4,7 @@ import logging
 from src.backend.controller_configuration import Configuration
 from src.backend.controller_obs import OBSController
 from src.backend.controller_gpt import GPTProxy
+from src.backend.utility_help import slash_command_help
 
 
 class CommandInterpreter:
@@ -20,8 +21,8 @@ class CommandInterpreter:
 
     def command_default(self, command, args):
 
-        logging.error(f"Error calling command {command} {args}")
-        reply = f"unexpected command /{command} {args}"
+        logging.error(f"Error calling command /{command} {args}")
+        reply = f"unknown command /{command} {args}"
         return {"response": reply}
 
 
@@ -33,11 +34,49 @@ class CommandInterpreter:
 
 
     def obs(self, command, args):
+
         logging.info(f"calling command {command} {args}")
         if args.pop(0) == "scene":
             return self.scene("scene", args)
 
         return {"response": "⚠️ Usage: /obs scene = <SceneName>"}
+
+
+    @staticmethod
+    def help(command, args=None):
+        response = slash_command_help(command, args)
+
+        return {"response": response}
+
+
+    def rebuild(self, command, args=None):
+        logging.info("🔁 Rebuilding initiative tracker from scratch")
+
+        characters = self.config.cached_configs.get("characters", [])
+
+        # Reset initiative-related fields
+        self.config.cached_configs["initiative_order"] = []
+        self.config.cached_configs["initiative_values"] = {}
+        self.config.cached_configs["initiative_pending"] = characters + ["GM"]
+        self.config.cached_configs["current_slot"] = 0
+        self.config.cached_configs["first_pass_done"] = False
+
+        # Rebuild scene mapping if needed
+        scene_map = {name: name for name in characters}
+        self.config.cached_configs["scene_mapping"] = scene_map
+
+        self.config.cached_configs["initiative_order"] = [
+            { "name": name, "initiative": 0, "scene": scene_map[name] }
+            for name in characters
+        ]
+
+        self.config.write_cached_configs()
+
+        return {
+            "response": f"✅ Initiative system rebuilt. Ready for new inputs.",
+            "characters": characters,
+            "scene_mapping": scene_map
+        }
 
 
     def scene(self, command, args):
@@ -91,25 +130,31 @@ class CommandInterpreter:
             return {"response": "⚠️ Initiative not started. Use /initiative first."}
 
         index = self.config.cached_configs.get("current_slot", 0)
-        index = (index + 1) % len(order)
-        self.config.cached_configs["current_slot"] = index
 
+        # Get current entry FIRST
         current = order[index]
         current_name = current["name"] if isinstance(current, dict) else current
+        scene = current.get("scene") if isinstance(current, dict) else None
+        logging.info(f"next is processing current order index: {current}: {current_name} scene: {scene}")
+
+        # Fallback to scene_mapping if needed
+        if not scene:
+            scene = self.config.cached_configs.get("scene_mapping", {}).get(current_name, f"{current_name}")
+
+        # Advance slot after resolving current
+        self.config.cached_configs["current_slot"] = (index +1) % len(order)
+        self.config.write_cached_configs()
 
         try:
-            scene = self.config.cached_configs.get(
-                "scene_mapping", {}).get(current_name, 'Dungeon LOGO')
-            self.config.write_cached_configs()
+            self.obs_proxy.change_scene(scene)
+        except Exception as e:
+            logging.error(f"OBS scene change failed: {e}")
 
-        except TypeError as error:
-            scene_map = self.config.cached_configs.get("scene_mapping", {})
-            expected = self.scene_map.get(current, current)
-            error_message = "failed to build scene properly: current: {current} - {current_name} scene data: {scene} error: {error}"
-            logging.error(error_message)
-        self.obs_proxy.change_scene(scene)
-
-        return {"response": f"🎯 It is now {current}'s turn! (Scene: {scene})"}
+        return {
+            "response": f"🎯 It is now {current_name}'s turn! (Scene: {scene})",
+            "current": current_name,
+            "current_index": index
+    }
 
 
     def initiative(self, command, args=None):
@@ -153,20 +198,10 @@ class CommandInterpreter:
         return {"response": f"Unknown set command, expected 'set characters'"}
 
 
-
-    def shutdown(self, command, args=None):
-        logging.info("\n🛑 Shutdown called from UI chat...")
-
-        # remove drive session token
-        # token_path = os.path.join(".security", "token.json")
-        # if os.path.exists(token_path):
-        #     os.remove(token_path)
-
-        #gracefully shut down backend and frontend
-        # backend_proc.terminate()
-        # frontend_proc.terminate()
-        # cant do this yet - more complicated
-        return {"response": f"Error: this functionality is not implemented yet"}
+    def reset_slot(self, command, args=None):
+        self.config.cached_configs["current_slot"] = 0
+        self.config.write_cached_configs()
+        return {"response": "🔁 Initiative index reset to 0"}
 
 
     def override(self, command, args):

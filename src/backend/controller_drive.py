@@ -53,12 +53,16 @@ class DriveController:
                 self.credentials = flow.run_local_server(port=0)
 
         # Save the credentials for the next run
+        # with open(self.token_file, "w") as token:
+        #     json.dump(self.token_file, token, indent=4)
+
         with open(self.token_file, "w") as token:
-            json.dump(self.token_file, token, indent=4)
+            token.write(self.credentials.to_json())
 
         try:
-            self.service = build("drive", "v3", credentials=creds)
-            return self.service
+            self.service = build("drive", "v3", credentials=self.credentials)
+            # self.service = build("drive", "v3", credentials=creds)
+            # return self.service
 
         except HttpError as error:
             logging.error(

@@ -15,8 +15,10 @@ export default function InitiativePanel({
                                           onHide,
                                           onTabView
                                         }) {
+  const [dragIndex, setDragIndex] = useState(null);
   const [settingsOpenIndex, setSettingsOpenIndex] = useState(null);
   const [sceneInput, setSceneInput] = useState("");
+  const [nameInput, setNameInput] = useState("");
 
   const handleChange = (index, field, value) => {
     const updated = [...characters];
@@ -27,33 +29,96 @@ export default function InitiativePanel({
     onUpdate(updated);
   };
 
-  const addEntry = () => {
-    onUpdate([...characters, { name: "", initiative: "" }]);
+  const addEntry = async () => {
+    const updated = [...characters, { name: "", initiative: "", scene: "" }];
+    onUpdate(updated);
+
+    try {
+      await fetch("/api/session/initiative", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: updated })
+      });
+    } catch (err) {
+      console.error("❌ Failed to persist added entry:", err);
+    }
   };
 
   const handleSettingsOpen = (index) => {
+    console.log("⚙ Opening settings for:", characters[index]);
     setSettingsOpenIndex(index);
+    setNameInput(characters[index]?.name || "");
     setSceneInput(characters[index]?.scene || "");
   };
 
   const handleSettingsClose = () => {
     setSettingsOpenIndex(null);
     setSceneInput("");
+    setNameInput("");
   };
 
   const handleSettingsSave = async () => {
-    const char = characters[settingsOpenIndex];
+    const original = characters[settingsOpenIndex];
+    const updatedList = [...characters];
+    const oldName = original.name;
+    const newName = nameInput;
+
     try {
+      // Rename character if name changed
+      if (oldName !== newName) {
+        await fetch("/api/session/rename-character", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ old_name: oldName, new_name: newName })
+        });
+      }
+
+      // Update scene mapping
       await fetch("/api/session/scene-mapping", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: char.name, scene: sceneInput })
+        body: JSON.stringify({ name: newName, scene: sceneInput })
       });
-      console.log(`Updated scene for ${char.name}: ${sceneInput}`);
+
+      // Update local state
+      updatedList[settingsOpenIndex] = {
+        ...original,
+        name: newName,
+        scene: sceneInput
+      };
+      onUpdate(updatedList);
     } catch (err) {
-      console.error("Failed to update scene mapping", err);
+      console.error("❌ Failed to save character settings:", err);
     }
+
     handleSettingsClose();
+  };
+
+  const handleDragStart = (index) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); // allow drop
+  };
+
+  const handleDrop = (targetIndex) => {
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    const updated = [...characters];
+    const [moved] = updated.splice(dragIndex, 1);
+    updated.splice(targetIndex, 0, moved);
+    onUpdate(updated);
+    setDragIndex(null);
+    console.log("💾 Saving new order:", updated);
+
+    // persist to backend
+    fetch("/api/session/initiative", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order: updated })
+    }).catch((err) =>
+      console.error("❌ Failed to persist initiative order:", err)
+    );
   };
 
   return (
@@ -85,13 +150,18 @@ export default function InitiativePanel({
         <div
           key={index}
           className={`initiative-entry ${index === currentIndex ? "active-slot" : ""}`}
+          draggable
+          onDragStart={() => handleDragStart(index)}
+          onDragOver={handleDragOver}
+          onDrop={() => handleDrop(index)}
           style={{
             display: "flex",
             alignItems: "center",
             marginBottom: "6px",
             backgroundColor: index === currentIndex ? "#f0fff4" : "transparent",
             borderLeft: index === currentIndex ? "4px solid green" : "4px solid transparent",
-            paddingLeft: "4px"
+            paddingLeft: "4px",
+            cursor: "move"
           }}
         >
           <input
@@ -121,15 +191,44 @@ export default function InitiativePanel({
         <button onClick={addEntry} style={{ marginRight: "10px" }}>
           <FaPlus /> Add
         </button>
+
         <button onClick={() => onStartCombat(characters)}>
           Start Combat
         </button>
+
         <button onClick={onNext} title="Next Turn" style={{ float: "right", marginTop: "5px" }}>
           <FaArrowRight />
         </button>
+
+        <button
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/session/command", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ command: "/rebuild" })
+              });
+              const data = await res.json();
+              console.log("🔁 Initiative rebuilt:", data.response);
+              if (data.characters) {
+                onUpdate(data.characters.map(name => ({
+                  name,
+                  initiative: "",
+                  scene: data.scene_mapping?.[name] || `${name} Scene`
+                })));
+              }
+            } catch (err) {
+              console.error("❌ Failed to rebuild initiative:", err);
+            }
+          }}
+          title="Reset and rebuild initiative state"
+          style={{ float: "left", marginTop: "5px", marginRight: "10px", background: "#ffc107" }}
+        >
+          🔁 Reset
+        </button>
       </div>
 
-      {/* Modal popup */}
+      {/* Settings Modal */}
       {settingsOpenIndex !== null && (
         <div style={{
           position: "absolute", top: "30%", left: "10%", width: "80%",
@@ -137,6 +236,13 @@ export default function InitiativePanel({
           padding: "10px", zIndex: 100
         }}>
           <h4>Settings: {characters[settingsOpenIndex].name}</h4>
+          <label>Character Name</label>
+          <input
+            type="text"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            style={{ width: "100%", marginBottom: "10px" }}
+          />
           <label>Character Scene</label>
           <input
             type="text"

@@ -27,18 +27,31 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
       const res = await fetch("/api/session/initiative");
       const data = await res.json();
 
+      const sceneMap = data.scene_mapping || {};
+
       if (Array.isArray(data.order) && data.order.length > 0) {
-        setInitiativeState(
-          data.order.every(e => typeof e === "object" && "name" in e)
-            ? data.order
-            : data.order.map(name => ({ name, initiative: "" }))
-        );
+        const entries = data.order.every(e => typeof e === "object" && "name" in e)
+          ? data.order
+          : data.order.map(name => ({ name, initiative: "" }));
+
+        const enriched = entries.map(e => ({
+          ...e,
+          scene: sceneMap[e.name] || ""
+        }));
+
+        setInitiativeState(enriched);
+        console.log("🎭 Final enriched initiativeState:", enriched);
+
       } else if (Array.isArray(data.characters)) {
         const cleaned = data.characters
           .filter(name => typeof name === "string")
-          .map(name => ({ name: name.trim(), initiative: "" }));
+          .map(name => ({
+            name: name.trim(),
+            initiative: "",
+            scene: sceneMap[name.trim()] || ""
+          }));
 
-        setInitiativeState(cleaned); // ✅ DO NOT re-map again
+        setInitiativeState(cleaned);
       }
     } catch (err) {
       console.error("Failed to load initiative state:", err);
@@ -58,28 +71,61 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   };
 
   const handleStartCombat = async (entries) => {
-    console.log("handleStartcombat launched");
     const sorted = [...entries]
-      .map(e => ({ ...e, initiative: parseInt(e.initiative) || 0 }))
+      .map(e => ({
+        ...e,
+        initiative: parseInt(e.initiative) || 0
+      }))
       .sort((a, b) => b.initiative - a.initiative);
 
     setInitiativeState(sorted);
-    await persistInitiativeState(sorted);
+    setCurrentIndex(0);
+    // carry over existing .scene if present in old state
+    const enriched = sorted.map(e => {
+      const match = initiativeState.find(i => i.name === e.name);
+      return {
+        ...e,
+        scene: match?.scene || `${e.name} Scene`
+      };
+    });
 
-    setCurrentIndex(0); // highlight first
+    setInitiativeState(enriched);
+    setCurrentIndex(0);
+    await persistInitiativeState(enriched);
 
-    try {
-      const res = await fetch("/api/session/command", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: "/next" })
-      });
-      const data = await res.json();
-      console.log("🎯 Combat started:", data.response);
-    } catch (err) {
-      console.error("❌ Failed to trigger scene change:", err);
+    const first = enriched[0];
+    const activeName = first?.name;
+    const scene = first?.scene || `${activeName} Scene`;
+
+    if (activeName) {
+      try {
+        // Update scene mapping just in case
+        await fetch("/api/session/scene-mapping", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: activeName, scene })
+        });
+
+        // Send direct OBS scene command
+        await fetch("/api/session/command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: `/obs scene = ${scene}` })
+        });
+
+        // Reset backend slot to 0
+        await fetch("/api/session/command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: "/reset_slot 0" })
+        });
+
+      } catch (err) {
+        console.error("❌ Failed to complete combat start sync:", err);
+      }
     }
   };
+
 
   const handleNext = async () => {
     try {
