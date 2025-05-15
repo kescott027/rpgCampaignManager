@@ -1,27 +1,56 @@
+// ChatSection.js
 import React, { useState } from "react";
 
 export default function ChatSection({
                                       sessionName = "Untitled Session",
                                       filePath = null,
-                                      devMode = false
+                                      devMode = false,
+                                      onFileSelect = () => {
+                                      }
                                     }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [showDevTools, setShowDevTools] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(null);
+
+  const sendToBackend = async (payload, endpoint) => {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    } catch (err) {
+      console.error("Backend error:", err);
+      setMessages(prev => [...prev, { role: "system", text: "❌ Failed to reach backend." }]);
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    if (devMode) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "debug", text: `📤 Sending prompt: ${input}` }
-      ]);
+    const userMessage = { role: "user", text: input };
+    setMessages(prev => [...prev, userMessage]);
+
+    // Slash-prefixed command routing
+    if (input.startsWith("/")) {
+      if (input.trim() === "/initiative") {
+        onFileSelect({ command: "/initiative", timestamp: Date.now() }); // triggers the initiative panel
+      }
+
+      const res = await sendToBackend({ command: input.trim() }, "/api/session/command");
+      const feedback = res?.response || res?.status || JSON.stringify(res);
+      setMessages(prev => [...prev, { role: "system", text: feedback }]);
+      setInput("");
+      setHistory((prev) => [...prev, input.trim()]);
+      setHistoryIndex(null);
+
+      return;
     }
 
-    const userMessage = { role: "user", text: input };
-    setMessages((prev) => [...prev, userMessage]);
-
+    // Regular chat to GPT
     try {
       const res = await fetch("/api/gpt/proxy", {
         method: "POST",
@@ -37,13 +66,10 @@ export default function ChatSection({
 
       const data = await res.json();
       const gptMessage = { role: "gpt", text: data.response };
-      setMessages((prev) => [...prev, gptMessage]);
+      setMessages(prev => [...prev, gptMessage]);
     } catch (err) {
       console.error("❌ Error connecting to GPT:", err);
-      setMessages((prev) => [
-        ...prev,
-        { role: "gpt", text: "❌ Error connecting to GPT: " + err }
-      ]);
+      setMessages(prev => [...prev, { role: "gpt", text: "❌ Error connecting to GPT: " + err }]);
     }
 
     setInput("");
@@ -51,9 +77,7 @@ export default function ChatSection({
 
   const downloadMarkdown = async () => {
     if (!filePath) return;
-    const res = await fetch(
-      `/api/gpt/export-chatlog?path=${encodeURIComponent(filePath.path)}`
-    );
+    const res = await fetch(`/api/gpt/export-chatlog?path=${encodeURIComponent(filePath.path)}`);
     const data = await res.json();
     const blob = new Blob([data.markdown], { type: "text/markdown" });
     const link = document.createElement("a");
@@ -81,23 +105,18 @@ export default function ChatSection({
     />
   );
 
-  const devToolbox =
-    devMode &&
-    showDevTools && (
-      <div
-        className="dev-toolbox"
-        style={{
-          background: "#222",
-          color: "#eee",
-          padding: "10px",
-          marginBottom: "5px",
-          borderTop: "2px solid #555"
-        }}
-      >
-        <strong>🧪 Dev Toolbox</strong>
-        <button onClick={downloadMarkdown}>⬇ Export Markdown</button>
-      </div>
-    );
+  const devToolbox = devMode && showDevTools && (
+    <div className="dev-toolbox" style={{
+      background: "#222",
+      color: "#eee",
+      padding: "10px",
+      marginBottom: "5px",
+      borderTop: "2px solid #555"
+    }}>
+      <strong>🧪 Dev Toolbox</strong>
+      <button onClick={downloadMarkdown}>⬇ Export Markdown</button>
+    </div>
+  );
 
   return (
     <div className="chat-section-wrapper" style={{ position: "relative" }}>
@@ -105,15 +124,11 @@ export default function ChatSection({
       {devToolbox}
       <div className="chat-section">
         <div className="chat-tools">
-          <button onClick={downloadMarkdown}>
-            ⬇️ Export Chatlog as Markdown
-          </button>
+          <button onClick={downloadMarkdown}>⬇️ Export Chatlog as Markdown</button>
         </div>
         <div className="chat-log">
           {messages.map((msg, idx) => (
-            <div key={idx} className={`chat-msg ${msg.role}`}>
-              {msg.text}
-            </div>
+            <div key={idx} className={`chat-msg ${msg.role}`}>{msg.text}</div>
           ))}
         </div>
         <div className="chat-input">
@@ -126,6 +141,22 @@ export default function ChatSection({
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSend();
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                if (history.length > 0) {
+                  const newIndex = historyIndex === null
+                    ? history.length - 1
+                    : Math.max(0, historyIndex - 1);
+                  setInput(history[newIndex]);
+                  setHistoryIndex(newIndex);
+                }
+              } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                if (history.length > 0 && historyIndex !== null) {
+                  const newIndex = Math.min(history.length - 1, historyIndex + 1);
+                  setInput(history[newIndex] || "");
+                  setHistoryIndex(newIndex === history.length - 1 ? null : newIndex);
+                }
               }
             }}
           />

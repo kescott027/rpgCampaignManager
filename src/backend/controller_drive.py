@@ -53,12 +53,16 @@ class DriveController:
                 self.credentials = flow.run_local_server(port=0)
 
         # Save the credentials for the next run
+        # with open(self.token_file, "w") as token:
+        #     json.dump(self.token_file, token, indent=4)
+
         with open(self.token_file, "w") as token:
-            json.dump(self.token_file, token, indent=4)
+            token.write(self.credentials.to_json())
 
         try:
-            self.service = build("drive", "v3", credentials=creds)
-            return self.service
+            self.service = build("drive", "v3", credentials=self.credentials)
+            # self.service = build("drive", "v3", credentials=creds)
+            # return self.service
 
         except HttpError as error:
             logging.error(
@@ -109,7 +113,7 @@ class DriveController:
         return self.service
 
 
-    def list_files(self, folder='rpgCampaignManager'):
+    def list_files(self, folder=None, by_id=False):
 
         if not self.service:
             self.service = build("drive", "v3", credentials=self.credentials)
@@ -120,32 +124,30 @@ class DriveController:
             raise ValueError('controller_drive.list_files failed to retrive files from drive')
 
         # First get the id of the parent to work with:
-        # self.search_files('rpgCampaignManager' and and mimeType='application/vnd.google-apps.folder')
         try:
-            #TODO: Remove override below
-            # folder = 'rpgCampaignManager'
 
-            parent_id = self.find_file_by_name(folder, directory=True)['files'][0]['id']
-            logging.debug(f"retrieving id of folder {folder}: {parent_id} ")
-            # parent_id = '13L6oC0g6Fou1s27YhhfcuVBocS_jJDOy'
-
+            if not by_id:
+                parent_id = self.find_file_by_name(folder, directory=True)['files'][0]['id']
+                logging.debug(f"retrieving id of folder {folder}: {parent_id} ")
+            else:
+                parent_id = folder
 
         except Exception as error:
-            logging.error(f'failure to find id of folder{folder} : {error} ')
+            logging.error(f'failure to find id of folder {folder} : {error} ')
             return [], error
 
         try:
             next_token = None
             files = []
 
-            query_string = f"'{parent_id}' in parents and mimeType='application/vnd.google-apps.folder'"
+            query_string = f"'{parent_id}' in parents"
 
             while True:
                 response = (
                     service.files().list(
                         q=query_string,
                         pageSize=100,
-                        fields="nextPageToken, files(id, name)")
+                        fields="nextPageToken, files(id, name, mimeType)")
                 ).execute()
 
 

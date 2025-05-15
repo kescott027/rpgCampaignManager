@@ -1,40 +1,32 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import TabViewer from 'components/TabViewer';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import TabViewer from "components/TabViewer";
 
-describe('TabViewer', () => {
-  const mockTabs = ['Tab A', 'Tab B'];
+describe("TabViewer", () => {
+  const mockTabs = ["Tab A", "Tab B"];
   const mockContent = {
-    'Tab A': <div>Content A</div>,
-    'Tab B': <div>Content B</div>
+    "Tab A": <div>Content A</div>,
+    "Tab B": <div>Content B</div>
   };
 
-  test('displays default tab content', () => {
+  test("displays default tab content", () => {
     render(
       <TabViewer
         tabs={mockTabs}
         activeTab="Tab A"
-        onTabChange={() => {}}
-      >
-        {mockContent['Tab A']}
-      </TabViewer>
+        onTabChange={() => {
+        }}
+        tabContent={mockContent}
+      />
     );
 
-    expect(screen.getByText(/Content A/i)).toBeInTheDocument();
+    // Use a flexible matcher to avoid DOM nesting issues
+    expect(
+      screen.getByText((text) => text.includes("Content A"))
+    ).toBeInTheDocument();
   });
 
-  /*
-  Commenting this out temporarily until existing test set completes.
-  test('returns PDF, Audio, and Video types correctly', () => {
-  expect(detectFileTab('guide.pdf')).toBe('PDF');
-  expect(detectFileTab('theme.mp3')).toBe('Audio');
-  expect(detectFileTab('trailer.webm')).toBe('Video');
-  });
-  */
-
-
-
-  test('calls onTabChange when a tab is clicked', () => {
+  test("calls onTabChange when a tab is clicked", () => {
     const mockChange = jest.fn();
 
     render(
@@ -42,14 +34,27 @@ describe('TabViewer', () => {
         tabs={mockTabs}
         activeTab="Tab A"
         onTabChange={mockChange}
-      >
-        {mockContent['Tab A']}
-      </TabViewer>
+        tabContent={mockContent}
+      />
     );
 
-    const tabB = screen.getByRole('button', { name: /Tab B/i });
-    fireEvent.click(tabB);
+    fireEvent.click(screen.getByRole("button", { name: "Tab B" }));
+    expect(mockChange).toHaveBeenCalledWith("Tab B");
+  });
 
-    expect(mockChange).toHaveBeenCalledWith('Tab B');
+  test("renders fallback content when active tab has no content", () => {
+    render(
+      <TabViewer
+        tabs={mockTabs}
+        activeTab="Tab X"
+        onTabChange={() => {
+        }}
+        tabContent={mockContent}
+      />
+    );
+
+    expect(
+      screen.getByText(/🪹 No content for "Tab X" tab\./i)
+    ).toBeInTheDocument();
   });
 });

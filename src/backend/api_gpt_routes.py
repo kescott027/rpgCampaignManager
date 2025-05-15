@@ -6,14 +6,12 @@ from openai import OpenAI
 from pathlib import Path
 from .controller_gpt import GPTProxy
 from .controller_security import secure_path, GptLoader, get_gpt_key
-from src.backend.controller_configuration import Configuration as Config
+# from src.backend.controller_configuration import Configuration as Config
 
 
 router = APIRouter()
-
-CONFIG = Config()
+# CONFIG = Config()
 client = OpenAI(api_key=get_gpt_key())
-# app = FastAPI()
 proxy = GPTProxy()
 
 

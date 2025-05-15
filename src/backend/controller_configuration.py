@@ -24,6 +24,7 @@ class Configuration:
         self.drive_token_path = self.set_secrets_path("token.json",
             default=os.path.join(self.secrets_path, "token.json"))
         self.drive_creds_path = self.set_secrets_path("credentials.json")
+        self.obs_creds_path = self.current_configs.get("obs_secret_filename")
 
     @staticmethod
     def set_project_root():
@@ -105,6 +106,29 @@ class Configuration:
         if status == 1 or error:
             logging.error(f"Configuration.clear_cached_config experienced \
                 an error clearing the cached config: {error}")
+
+        return
+
+
+    def set_cached_configs(self, settings: dict):
+        if type(settings) == dict:
+            self.cached_configs.update(settings)
+            self.current_configs.update(settings)
+        return
+
+    def update_cached(self, keys, values):
+
+        self.current_configs[keys] = values
+        self.cached_configs[keys] = values
+        self.write_cached_configs()
+
+        return
+
+    def add_cached(self, new_configs):
+
+        self.current_configs.update(new_configs)
+        self.cached_configs.update(new_configs)
+        self.write_cached_configs()
 
         return
 

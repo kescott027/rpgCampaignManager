@@ -21,5 +21,7 @@
     "Always format world references using square brackets, e.g., [Colby Jackson].",
     "You do not reveal GM Only content unless specifically instructed in GM Mode.",
     "Keep responses structured and concise unless told otherwise."
-  ]
+  ],
+  "obs_host": "localhost",
+  "obs_port": 4455
 }

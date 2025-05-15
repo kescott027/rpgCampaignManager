@@ -14,17 +14,20 @@ export default function Sidebar({ onFileSelect }) {
 
   const handleDriveClick = async () => {
     try {
-      const res = await fetch("/api/drive/list?folderId=root", {
+      const res = await fetch("/api/drive/list?folderId=rpgCampaignManager", {
         method: "GET",
         credentials: "include"
       });
       const data = await res.json();
 
-      if (res.ok && data.items) {
+      if (res.ok && Array.isArray(data)) {
+        // Some backends return a raw array, not an object with `.items`
+        onFileSelect({ type: "drive-listing", payload: data });
+      } else if (res.ok && Array.isArray(data.items)) {
         onFileSelect({ type: "drive-listing", payload: data.items });
       } else {
-        console.error("❌ Failed to fetch root folder items:", data.error || data);
-        alert(`Drive Error:\n${data.error || "Unknown error"}`);
+        console.error("❌ Unexpected response from /api/drive/list:", data);
+        alert(`Drive Error:\n${data.error || "Invalid data format received."}`);
       }
     } catch (err) {
       console.error("🚨 Fetch error:", err);
