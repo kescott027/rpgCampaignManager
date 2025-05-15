@@ -2,22 +2,25 @@ import { renderHook } from "@testing-library/react";
 import { waitFor } from "@testing-library/react";
 import { useStartupMessages } from "./useStartupMessages";
 
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    json: () =>
-      Promise.resolve({
-        "developer mode": true,
-        sessionName: "GM Session"
-      })
-  })
-);
+// Apply mock fetch before tests
+beforeEach(() => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      json: () =>
+        Promise.resolve({
+          sessionName: "GM Session",
+          "developer mode": true
+        })
+    })
+  );
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+});
 
 describe("useStartupMessages", () => {
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  test("returns default session name and developer mode", async () => {
+  test("returns session name and developer mode from config", async () => {
     const { result } = renderHook(() => useStartupMessages());
 
     await waitFor(() =>
@@ -39,3 +42,4 @@ describe("useStartupMessages", () => {
     expect(result.current.devMode).toBe(false);
   });
 });
+

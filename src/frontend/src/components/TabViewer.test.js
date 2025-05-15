@@ -16,13 +16,14 @@ describe("TabViewer", () => {
         activeTab="Tab A"
         onTabChange={() => {
         }}
-      >
-        {mockContent}
-      </TabViewer>
+        tabContent={mockContent}
+      />
     );
 
-    // This checks that the correct content is visible in the active tab
-    expect(screen.getByText("Content A")).toBeInTheDocument();
+    // Use a flexible matcher to avoid DOM nesting issues
+    expect(
+      screen.getByText((text) => text.includes("Content A"))
+    ).toBeInTheDocument();
   });
 
   test("calls onTabChange when a tab is clicked", () => {
@@ -33,31 +34,27 @@ describe("TabViewer", () => {
         tabs={mockTabs}
         activeTab="Tab A"
         onTabChange={mockChange}
-      >
-        {mockContent}
-      </TabViewer>
+        tabContent={mockContent}
+      />
     );
 
-    const tabB = screen.getByRole("button", { name: /Tab B/i });
-    fireEvent.click(tabB);
-
+    fireEvent.click(screen.getByRole("button", { name: "Tab B" }));
     expect(mockChange).toHaveBeenCalledWith("Tab B");
   });
 
-  test("renders fallback message if active tab has no content", () => {
+  test("renders fallback content when active tab has no content", () => {
     render(
       <TabViewer
         tabs={mockTabs}
-        activeTab="Nonexistent Tab"
+        activeTab="Tab X"
         onTabChange={() => {
         }}
-      >
-        {mockContent}
-      </TabViewer>
+        tabContent={mockContent}
+      />
     );
 
     expect(
-      screen.getByText(/🪹 No content for "Nonexistent Tab" tab./i)
+      screen.getByText(/🪹 No content for "Tab X" tab\./i)
     ).toBeInTheDocument();
   });
 });
