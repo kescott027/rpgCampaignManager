@@ -39,7 +39,12 @@ export default function App() {
             initialTab={initialTab}
             onFileSelect={handleFileSelect}
           />
-          <ChatSection filePath={selectedFile} sessionName="GM Session" devMode={devMode} />
+          <ChatSection
+            filePath={selectedFile}
+            sessionName="GM Session"
+            devMode={devMode}
+            onFileSelect={handleFileSelect}
+          />
         </Split>
       </div>
     </div>

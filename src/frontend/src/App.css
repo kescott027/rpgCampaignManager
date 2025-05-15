@@ -123,3 +123,30 @@ body, html, .app-container {
   font-weight: bold;
   background: #ddd;
 }
+
+.initiative-panel-wrapper {
+  border-right: 1px solid #ccc;
+  padding: 8px;
+  min-width: 250px;
+  background: #f9f9f9;
+}
+
+.initiative-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.initiative-dock-icon {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.initiative-entry.active-slot {
+  background-color: #f0fff4;
+  border-left: 4px solid green;
+  font-weight: bold;
+}

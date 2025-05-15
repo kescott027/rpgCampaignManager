@@ -1,4 +1,5 @@
 #.src.backend.controller_command.py
+import json
 import logging
 from src.backend.controller_configuration import Configuration
 from src.backend.controller_obs import OBSController
@@ -81,7 +82,6 @@ class CommandInterpreter:
 
 
     def next_action(self, command, args=None):
-
         if not args:
             args = ""
         logging.info(f"calling command {command} {args}")
@@ -93,11 +93,21 @@ class CommandInterpreter:
         index = self.config.cached_configs.get("current_slot", 0)
         index = (index + 1) % len(order)
         self.config.cached_configs["current_slot"] = index
-        current = order[index]
-        self.config.write_cached_configs()
 
-        scene = self.config.cached_configs.get("scene_mapping", {}).get(current, f"{current} Scene")
-        obs.change_scene(scene)
+        current = order[index]
+        current_name = current["name"] if isinstance(current, dict) else current
+
+        try:
+            scene = self.config.cached_configs.get(
+                "scene_mapping", {}).get(current_name, 'Dungeon LOGO')
+            self.config.write_cached_configs()
+
+        except TypeError as error:
+            scene_map = self.config.cached_configs.get("scene_mapping", {})
+            expected = self.scene_map.get(current, current)
+            error_message = "failed to build scene properly: current: {current} - {current_name} scene data: {scene} error: {error}"
+            logging.error(error_message)
+        self.obs_proxy.change_scene(scene)
 
         return {"response": f"🎯 It is now {current}'s turn! (Scene: {scene})"}
 
@@ -108,12 +118,15 @@ class CommandInterpreter:
             args = ""
         logging.info(f"calling command {command} {args}")
 
-        chars = self.config.cached_configs.get("characters", [])
-        self.config.cached_configs["initiative_pending"] = chars + ["GM"]
-        self.config.cached_configs["initiative_values"] = {}
-        self.config.write_cached_configs()
+        characters = self.config.cached_configs.get("characters", [])
 
-        return {"response": f"📝 What is {chars[0]}'s initiative?"}
+        if not self.config.cached_configs.get("initiative_values"):
+            self.config.cached_configs["initiative_values"] = {}
+
+        return {
+            "order": self.config.cached_configs.get("initiative_order", []),
+            "characters": self.config.cached_configs.get("characters", [])
+        }
 
 
     def set_action(self, command, args=None):
@@ -125,7 +138,7 @@ class CommandInterpreter:
         if command.lower().startswith("characters"):
 
             characters = [name.strip() for name in remainder[len("characters"):].split(",") if name.strip()]
-            scene_map = {name: f"{name} Scene" for name in characters}
+            scene_map = {name: f"{name}" for name in characters}
             self.config.cached_configs.update({
                 "characters": characters,
                 "scene_mapping": scene_map,
@@ -140,3 +153,46 @@ class CommandInterpreter:
         return {"response": f"Unknown set command, expected 'set characters'"}
 
 
+
+    def shutdown(self, command, args=None):
+        logging.info("\n🛑 Shutdown called from UI chat...")
+
+        # remove drive session token
+        # token_path = os.path.join(".security", "token.json")
+        # if os.path.exists(token_path):
+        #     os.remove(token_path)
+
+        #gracefully shut down backend and frontend
+        # backend_proc.terminate()
+        # frontend_proc.terminate()
+        # cant do this yet - more complicated
+        return {"response": f"Error: this functionality is not implemented yet"}
+
+
+    def override(self, command, args):
+        logging.info(f"overriding in-memory config: {command} {args}")
+        # overrides an existing configuration in memory #
+
+        override_field = args.pop(0)
+        equals = args.pop(0) if args[0] == "=" else None
+        assembled = "".join(args)
+
+        if (assembled.find("{")>=0) and (assembled.find("}")>=0):
+            # treat as json and convert to a dict
+            data_type = "dict"
+            override_data = json.loads(assembled)
+
+        elif (assembled.find("[]")>=0) and (assembled.find("[]")>=0):
+            # make back into a list
+            data_type = "list"
+            override_data = assembled.split()
+
+        else:
+            # just leave as a string
+            data_type = "string"
+            override_data = assembled
+
+        # override in cached_configs
+        self.config.update_cached(override_field, override_data)
+
+        return{"response": f"overriding {override_field} as {data_type}: {override_data}"}

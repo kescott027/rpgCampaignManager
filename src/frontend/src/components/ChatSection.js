@@ -1,7 +1,13 @@
 // ChatSection.js
 import React, { useState } from "react";
 
-export default function ChatSection({ sessionName = "Untitled Session", filePath = null, devMode = false }) {
+export default function ChatSection({
+                                      sessionName = "Untitled Session",
+                                      filePath = null,
+                                      devMode = false,
+                                      onFileSelect = () => {
+                                      }
+                                    }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [showDevTools, setShowDevTools] = useState(false);
@@ -28,6 +34,10 @@ export default function ChatSection({ sessionName = "Untitled Session", filePath
 
     // Slash-prefixed command routing
     if (input.startsWith("/")) {
+      if (input.trim() === "/initiative") {
+        onFileSelect({ command: "/initiative", timestamp: Date.now() }); // triggers the initiative panel
+      }
+
       const res = await sendToBackend({ command: input.trim() }, "/api/session/command");
       const feedback = res?.response || res?.status || JSON.stringify(res);
       setMessages(prev => [...prev, { role: "system", text: feedback }]);

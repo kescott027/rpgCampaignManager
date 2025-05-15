@@ -116,6 +116,22 @@ class Configuration:
             self.current_configs.update(settings)
         return
 
+    def update_cached(self, keys, values):
+
+        self.current_configs[keys] = values
+        self.cached_configs[keys] = values
+        self.write_cached_configs()
+
+        return
+
+    def add_cached(self, new_configs):
+
+        self.current_configs.update(new_configs)
+        self.cached_configs.update(new_configs)
+        self.write_cached_configs()
+
+        return
+
 
     def write_cached_configs(self):
         managed_cache_path = os.path.join(self.secrets_path, "cached_configs.json")
