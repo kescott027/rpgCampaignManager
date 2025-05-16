@@ -120,43 +120,6 @@ class CommandInterpreter:
         return {"response": "⚠️ Usage: /submit initiative Kolby 18"}
 
 
-    def next_action(self, command, args=None):
-        if not args:
-            args = ""
-        logging.info(f"calling command {command} {args}")
-
-        order = self.config.cached_configs.get("initiative_order", [])
-        if not order:
-            return {"response": "⚠️ Initiative not started. Use /initiative first."}
-
-        index = self.config.cached_configs.get("current_slot", 0)
-
-        # Get current entry FIRST
-        current = order[index]
-        current_name = current["name"] if isinstance(current, dict) else current
-        scene = current.get("scene") if isinstance(current, dict) else None
-        logging.info(f"next is processing current order index: {current}: {current_name} scene: {scene}")
-
-        # Fallback to scene_mapping if needed
-        if not scene:
-            scene = self.config.cached_configs.get("scene_mapping", {}).get(current_name, f"{current_name}")
-
-        # Advance slot after resolving current
-        self.config.cached_configs["current_slot"] = (index +1) % len(order)
-        self.config.write_cached_configs()
-
-        try:
-            self.obs_proxy.change_scene(scene)
-        except Exception as e:
-            logging.error(f"OBS scene change failed: {e}")
-
-        return {
-            "response": f"🎯 It is now {current_name}'s turn! (Scene: {scene})",
-            "current": current_name,
-            "current_index": index
-    }
-
-
     def initiative(self, command, args=None):
 
         if not args:
@@ -171,6 +134,55 @@ class CommandInterpreter:
         return {
             "order": self.config.cached_configs.get("initiative_order", []),
             "characters": self.config.cached_configs.get("characters", [])
+        }
+
+
+    def previous_action(self, command, args=None):
+        from src.backend.controller_datastore import CombatDatastore
+        db = CombatDatastore()
+
+        prev = db.reverse_turn()
+        if not prev:
+            return {"response": "⚠️ Cannot go back — no combatants."}
+
+        name = prev["name"]
+        scene = prev.get("scene") or name
+
+        try:
+            self.obs_proxy.change_scene(scene)
+        except Exception as e:
+            logging.error(f"❌ OBS scene update failed: {e}")
+
+        return {
+            "response": f"🔁 Reversed to {name}'s turn. (Scene: {scene})",
+            "current": name,
+            "current_index": prev["current_index"]
+        }
+
+
+    def next_action(self, command, args=None):
+        from src.backend.controller_datastore import CombatDatastore
+        db = CombatDatastore()
+
+        next_entry = db.advance_turn()
+
+        if not next_entry:
+            return {"response": "⚠️ No active combatants."}
+
+        name = next_entry["name"]
+        scene = next_entry.get("scene") or name
+        index = next_entry["current_index"]
+
+        try:
+            self.obs_proxy.change_scene(scene)
+        except Exception as e:
+            logging.error(f"❌ OBS scene update failed: {e}")
+
+        return {
+            "response": f"🎯 It is now {name}'s turn! (Scene: {scene})",
+            "current": name,
+            "current_index": index,
+            "scene": scene
         }
 
 

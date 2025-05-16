@@ -67,6 +67,25 @@ export default function Sidebar({ onFileSelect }) {
         <FileTree onFileSelect={onFileSelect} />
       </div>
 
+      <div style={{ padding: "10px", borderTop: "1px solid #ccc", marginTop: "10px" }}>
+        <h4>Game Panels</h4>
+
+        <button
+          onClick={() => onFileSelect({ toggle: "initiative" })}
+          style={{ display: "block", marginBottom: "8px" }}
+        >
+          🎲 Initiative Tracker
+        </button>
+
+        <button
+          onClick={() => onFileSelect({ toggle: "characters" })}
+          style={{ display: "block" }}
+        >
+          👤 Characters
+        </button>
+
+      </div>
+
       <div className="section">
         <h4>⚔️ Assets</h4>
         <ul>

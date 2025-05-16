@@ -1,9 +1,14 @@
 // InitiativePanel.js
 import React, { useState } from "react";
 import {
-  FaCog, FaPlus, FaArrowRight,
-  FaTimes, FaEyeSlash, FaArrowRight as FaArrowTab
+  FaCog,
+  FaPlus,
+  FaArrowRight,
+  FaTimes,
+  FaEyeSlash,
+  FaArrowRight as FaArrowTab
 } from "react-icons/fa";
+import { persistInitiativeState } from "../utils/initSync";
 
 export default function InitiativePanel({
                                           characters = [],
@@ -13,42 +18,71 @@ export default function InitiativePanel({
                                           onUpdate,
                                           onClose,
                                           onHide,
-                                          onTabView
+                                          onTabView,
+                                          onCommandRequest
                                         }) {
+  const [entries, setEntries] = useState(
+    characters.map((char) =>
+      typeof char === "string" ? { name: char, initiative: "", scene: char } : char
+    )
+  );
   const [dragIndex, setDragIndex] = useState(null);
   const [settingsOpenIndex, setSettingsOpenIndex] = useState(null);
   const [sceneInput, setSceneInput] = useState("");
   const [nameInput, setNameInput] = useState("");
 
   const handleChange = (index, field, value) => {
-    const updated = [...characters];
-    updated[index] = {
-      ...updated[index],
-      [field]: value
-    };
-    onUpdate(updated);
+    const updated = [...entries];
+    updated[index][field] = value;
+    updated[index].scene = updated[index].scene || updated[index].name;
+    setEntries(updated);
+    onUpdate && onUpdate(updated);
+    persistInitiativeState(updated);
   };
 
-  const addEntry = async () => {
-    const updated = [...characters, { name: "", initiative: "", scene: "" }];
-    onUpdate(updated);
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
 
-    try {
-      await fetch("/api/session/initiative", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order: updated })
-      });
-    } catch (err) {
-      console.error("❌ Failed to persist added entry:", err);
+  const handleDrop = (dropIndex) => {
+    if (dragIndex === null || dropIndex === null || dragIndex === dropIndex) return;
+    const reordered = [...entries];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dropIndex, 0, moved);
+    setEntries(reordered);
+    setDragIndex(null);
+    onUpdate && onUpdate(reordered);
+    persistInitiativeState(reordered);
+  };
+
+  const addEntry = () => {
+    const updated = [...entries, { name: "", initiative: "", scene: "" }];
+    setEntries(updated);
+    onUpdate && onUpdate(updated);
+    persistInitiativeState(updated);
+  };
+
+  const handleStartCombat = () => {
+    if (typeof onStartCombat === "function") {
+      onStartCombat(entries);
+    } else if (typeof onCommandRequest === "function") {
+      onCommandRequest({ command: "/start-combat", timestamp: Date.now() });
+    }
+    handleSettingsClose();
+  };
+
+  const handleNext = () => {
+    if (typeof onNext === "function") {
+      onNext();
+    } else if (typeof onCommandRequest === "function") {
+      onCommandRequest({ command: "/next", timestamp: Date.now() });
     }
   };
 
   const handleSettingsOpen = (index) => {
-    console.log("⚙ Opening settings for:", characters[index]);
     setSettingsOpenIndex(index);
-    setNameInput(characters[index]?.name || "");
-    setSceneInput(characters[index]?.scene || "");
+    setNameInput(entries[index]?.name || "");
+    setSceneInput(entries[index]?.scene || "");
   };
 
   const handleSettingsClose = () => {
@@ -57,79 +91,25 @@ export default function InitiativePanel({
     setNameInput("");
   };
 
-  const handleSettingsSave = async () => {
-    const original = characters[settingsOpenIndex];
-    const updatedList = [...characters];
-    const oldName = original.name;
-    const newName = nameInput;
-
-    try {
-      // Rename character if name changed
-      if (oldName !== newName) {
-        await fetch("/api/session/rename-character", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ old_name: oldName, new_name: newName })
-        });
-      }
-
-      // Update scene mapping
-      await fetch("/api/session/scene-mapping", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, scene: sceneInput })
-      });
-
-      // Update local state
-      updatedList[settingsOpenIndex] = {
-        ...original,
-        name: newName,
-        scene: sceneInput
-      };
-      onUpdate(updatedList);
-    } catch (err) {
-      console.error("❌ Failed to save character settings:", err);
-    }
-
+  const handleSettingsSave = () => {
+    if (settingsOpenIndex === null) return;
+    const updated = [...entries];
+    updated[settingsOpenIndex].name = nameInput;
+    updated[settingsOpenIndex].scene = sceneInput || nameInput;
+    setEntries(updated);
+    onUpdate && onUpdate(updated);
+    persistInitiativeState(updated);
     handleSettingsClose();
-  };
-
-  const handleDragStart = (index) => {
-    setDragIndex(index);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault(); // allow drop
-  };
-
-  const handleDrop = (targetIndex) => {
-    if (dragIndex === null || dragIndex === targetIndex) return;
-    const updated = [...characters];
-    const [moved] = updated.splice(dragIndex, 1);
-    updated.splice(targetIndex, 0, moved);
-    onUpdate(updated);
-    setDragIndex(null);
-    console.log("💾 Saving new order:", updated);
-
-    // persist to backend
-    fetch("/api/session/initiative", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ order: updated })
-    }).catch((err) =>
-      console.error("❌ Failed to persist initiative order:", err)
-    );
   };
 
   return (
     <div className="initiative-panel" style={{
-      width: "260px",
+      width: "280px",
       padding: "10px",
       background: "#f8f9fa",
       borderRight: "1px solid #ccc",
       position: "relative"
     }}>
-      {/* Top controls */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <h4 style={{ margin: 0 }}>Initiative Tracker</h4>
         <div style={{ display: "flex", gap: "8px" }}>
@@ -145,13 +125,12 @@ export default function InitiativePanel({
         </div>
       </div>
 
-      {/* Initiative list */}
-      {characters.map((entry, index) => (
+      {entries.map((entry, index) => (
         <div
           key={index}
           className={`initiative-entry ${index === currentIndex ? "active-slot" : ""}`}
           draggable
-          onDragStart={() => handleDragStart(index)}
+          onDragStart={() => setDragIndex(index)}
           onDragOver={handleDragOver}
           onDrop={() => handleDrop(index)}
           style={{
@@ -186,56 +165,23 @@ export default function InitiativePanel({
         </div>
       ))}
 
-      {/* Buttons */}
       <div style={{ marginTop: "10px" }}>
         <button onClick={addEntry} style={{ marginRight: "10px" }}>
           <FaPlus /> Add
         </button>
-
-        <button onClick={() => onStartCombat(characters)}>
-          Start Combat
-        </button>
-
-        <button onClick={onNext} title="Next Turn" style={{ float: "right", marginTop: "5px" }}>
+        <button onClick={handleStartCombat}>Start Combat</button>
+        <button onClick={handleNext} title="Next Turn" style={{ float: "right", marginTop: "5px" }}>
           <FaArrowRight />
-        </button>
-
-        <button
-          onClick={async () => {
-            try {
-              const res = await fetch("/api/session/command", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ command: "/rebuild" })
-              });
-              const data = await res.json();
-              console.log("🔁 Initiative rebuilt:", data.response);
-              if (data.characters) {
-                onUpdate(data.characters.map(name => ({
-                  name,
-                  initiative: "",
-                  scene: data.scene_mapping?.[name] || `${name} Scene`
-                })));
-              }
-            } catch (err) {
-              console.error("❌ Failed to rebuild initiative:", err);
-            }
-          }}
-          title="Reset and rebuild initiative state"
-          style={{ float: "left", marginTop: "5px", marginRight: "10px", background: "#ffc107" }}
-        >
-          🔁 Reset
         </button>
       </div>
 
-      {/* Settings Modal */}
       {settingsOpenIndex !== null && (
         <div style={{
           position: "absolute", top: "30%", left: "10%", width: "80%",
           background: "white", border: "1px solid #999", boxShadow: "2px 2px 10px rgba(0,0,0,0.2)",
           padding: "10px", zIndex: 100
         }}>
-          <h4>Settings: {characters[settingsOpenIndex].name}</h4>
+          <h4>Settings: {entries[settingsOpenIndex].name}</h4>
           <label>Character Name</label>
           <input
             type="text"

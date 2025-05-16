@@ -39,7 +39,9 @@ export default function ChatSection({
       if (input.trim() === "/initiative") {
         onFileSelect({ command: "/initiative", timestamp: Date.now() }); // triggers the initiative panel
       }
-
+      if (input.trim() === "/characters") {
+        onFileSelect({ command: "/characters" });
+      }
       const res = await sendToBackend({ command: input.trim() }, "/api/session/command");
       const feedback = res?.response || res?.status || JSON.stringify(res);
       setMessages(prev => [...prev, { role: "system", text: feedback }]);
