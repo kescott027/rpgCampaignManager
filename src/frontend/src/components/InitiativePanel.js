@@ -1,5 +1,5 @@
 // InitiativePanel.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FaCog,
   FaPlus,
@@ -14,6 +14,7 @@ export default function InitiativePanel({
                                           characters = [],
                                           currentIndex = 0,
                                           onStartCombat,
+                                          onPrevious,
                                           onNext,
                                           onUpdate,
                                           onClose,
@@ -21,11 +22,24 @@ export default function InitiativePanel({
                                           onTabView,
                                           onCommandRequest
                                         }) {
-  const [entries, setEntries] = useState(
-    characters.map((char) =>
-      typeof char === "string" ? { name: char, initiative: "", scene: char } : char
-    )
-  );
+
+  const [entries, setEntries] = useState(() => {
+    if (!Array.isArray(characters)) {
+      console.warn("⚠️ InitiativePanel received non-array 'characters':", characters);
+      return [];
+    }
+
+    return characters.map((char) =>
+      typeof char === "string"
+        ? { name: char, initiative: "", scene: char }
+        : {
+          name: char.name || "",
+          initiative: char.initiative || "",
+          scene: char.scene || char.name || ""
+        }
+    );
+  });
+
   const [dragIndex, setDragIndex] = useState(null);
   const [settingsOpenIndex, setSettingsOpenIndex] = useState(null);
   const [sceneInput, setSceneInput] = useState("");
@@ -52,7 +66,7 @@ export default function InitiativePanel({
     setEntries(reordered);
     setDragIndex(null);
     onUpdate && onUpdate(reordered);
-    persistInitiativeState(reordered);
+    // persistInitiativeState(reordered);
   };
 
   const addEntry = () => {
@@ -170,6 +184,7 @@ export default function InitiativePanel({
           <FaPlus /> Add
         </button>
         <button onClick={handleStartCombat}>Start Combat</button>
+        <button onClick={onPrevious} title="Previous Turn" style={{ float: "left", marginTop: "5px" }}>⏪</button>
         <button onClick={handleNext} title="Next Turn" style={{ float: "right", marginTop: "5px" }}>
           <FaArrowRight />
         </button>

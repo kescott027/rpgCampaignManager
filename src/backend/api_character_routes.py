@@ -23,6 +23,7 @@ async def create_character(request: Request):
     except Exception as e:
         return {"error": str(e)}
 
+
 @router.post("/api/characters/update")
 async def update_character(request: Request):
     try:
@@ -35,3 +36,4 @@ async def update_character(request: Request):
 
     except Exception as e:
         return {"error": str(e)}
+

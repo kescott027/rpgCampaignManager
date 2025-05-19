@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import InitiativePanel from "./InitiativePanel";
 import CharacterPanel from "./CharacterPanel";
+import { startCombat } from "../handlers/startCombatHandler";
+import { advanceTurn, reverseTurn } from "../handlers/turnHandlers";
 import { persistInitiativeState } from "../utils/initSync";
-
 
 export default function PanelManager({
                                        filePath,
@@ -14,7 +15,8 @@ export default function PanelManager({
                                      }) {
   const [showInitiative, setShowInitiative] = useState(false);
   const [initiativeDocked, setInitiativeDocked] = useState(false);
-
+  const [initiativeQueue, setInitiativeQueue] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [showCharacters, setShowCharacters] = useState(false);
   const [charactersDocked, setCharactersDocked] = useState(false);
 
@@ -35,6 +37,39 @@ export default function PanelManager({
         setShowInitiative(true);
         setInitiativeDocked(false);
         setInitiativeTab(false);
+
+        const loadInitiativeQueue = async () => {
+          try {
+            const res = await fetch("/api/datastore/combat-queue");
+            const data = await res.json();
+            const queue = data.queue || [];
+            setInitiativeQueue(queue);
+            setCurrentIndex(0);
+          } catch (err) {
+            console.error("❌ Failed to fetch combat queue:", err);
+          }
+        };
+
+        loadInitiativeQueue();
+        setShowInitiative(true);
+        setInitiativeDocked(false);
+        setInitiativeTab(false);
+
+        // Fetch initiative queue from datastore
+        fetch("/api/datastore/combat-queue")
+          .then((res) => res.json())
+          .then((data) => {
+            const queue = data.queue || [];
+            setInitiativeQueue(queue);
+            setCurrentIndex(0);
+          })
+          .catch((err) => {
+            console.error("❌ Failed to fetch combat queue:", err);
+          });
+
+        setShowInitiative(true);
+        setInitiativeDocked(false);
+        setInitiativeTab(false);
       }
 
       if (filePath.command === "/characters") {
@@ -44,6 +79,7 @@ export default function PanelManager({
       }
     }
   }, [filePath]);
+  console.log("📊 initiativeQueue:", initiativeQueue);
 
   return (
     <>
@@ -75,6 +111,26 @@ export default function PanelManager({
       )}
 
       {showInitiative && renderInitiativePanel(false, {
+        characters: initiativeQueue,              // ✅ THIS
+        currentIndex: currentIndex,
+        onStartCombat: async (entries) => {
+          const sorted = await startCombat(entries);   // ← sorts, persists, sends to OBS
+          setInitiativeQueue(sorted);                  // ← update internal state
+          setCurrentIndex(0);                    // ← highlight first slot
+
+          onFileSelect && onFileSelect({
+            command: "/initiative",
+            timestamp: Date.now()                      // ← force UI reload if needed
+          });
+        },
+        onNext: async () => {
+          const result = await advanceTurn(initiativeQueue, currentIndex);
+          setCurrentIndex(result.currentIndex);
+        },
+        onPrevious: async () => {
+          const result = await reverseTurn(initiativeQueue, currentIndex);
+          setCurrentIndex(result.currentIndex);
+        },
         onClose: () => setShowInitiative(false),
         onHide: () => {
           setShowInitiative(false);
@@ -84,8 +140,16 @@ export default function PanelManager({
           setShowInitiative(false);
           setInitiativeTab(true);
         },
-        onUpdate: (entries) => {
-          persistInitiativeState(entries);
+        onUpdate: async (entries) => {
+          await fetch("/api/datastore/update-combat-queue", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ entries })
+          });
+
+          const res = await fetch("/api/datastore/combat-queue");
+          const data = await res.json();
+          setInitiativeQueue(data.queue || []);
         }
       })}
 

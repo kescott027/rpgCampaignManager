@@ -9,6 +9,8 @@ from .controller_localstore import project_root
 from typing import Optional
 from pathlib import Path
 
+logging.basicConfig(level=logging.DEBUG)
+
 
 class SecretPayload(BaseModel):
     openaiKey: Optional[str] = None
@@ -21,8 +23,10 @@ class SecretCheckResponse(BaseModel):
 
 
 class GptLoader:
-    def __init__(self):
-        self.config = Config()
+    def __init__(self, source='Unknown'):
+        self.source = source
+        logging.debug(f'{source} launching Security controller')
+        self.config = Config(source='Security Controller')
         self.key_path = self.config.gpt_path
         self.key = ""
         self.load_gpt_key()
@@ -40,7 +44,7 @@ class GptLoader:
 
         if not gpt_json:
             logging.error(f"controller_security.GptLoader could not \
-                load GPT key from {self.key_path}.")
+                load GPT key from secrets path.")
             return None
 
         self.key = gpt_json.get("OPENAI_API_KEY", None)

@@ -1,8 +1,10 @@
 import json
+import logging
 from fastapi import APIRouter, Request
 from src.backend.controller_configuration import Configuration
 from src.backend.controller_obs import OBSController
 
+logging.basicConfig(level=logging.DEBUG)
 config = Configuration()
 obs = OBSController()
 router = APIRouter()

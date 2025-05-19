@@ -1,6 +1,7 @@
 import os
 import openai
 import json
+import logging
 from dotenv import load_dotenv
 from datetime import datetime
 from typing import List
@@ -9,6 +10,10 @@ from typing import Optional
 from src.backend.controller_configuration import Configuration as Config
 from src.backend.utility_file import json_loader, project_root
 
+
+logging.basicConfig(level=logging.DEBUG)
+
+
 class ChatRequest(BaseModel):
     message: str
     session_name: Optional[str] = None
@@ -16,8 +21,10 @@ class ChatRequest(BaseModel):
 
 
 class GPTProxy:
-    def __init__(self):
-        self.config = Config()
+    def __init__(self, source='Unknown'):
+        self.source = source
+        logging.debug(f'{source} launching GPTProxy controller')
+        self.config = Config(source='GPTProxy')
         self.gpt_key_path = self.config.gpt_path
         self.api_key = json_loader(self.gpt_key_path, 'r')['OPENAI_API_KEY']
 

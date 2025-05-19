@@ -36,7 +36,7 @@ class CharacterDatastore(RpgDatabase):
         command = "SELECT * FROM characters"
         if not include_inactive:
             command += " WHERE active = 1"
-        rows = self.read(command)
+        rows = self.read (command)
 
         # Convert each row to dict
         columns = [

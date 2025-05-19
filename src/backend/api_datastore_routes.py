@@ -1,8 +1,12 @@
+import logging
 from fastapi import APIRouter, Request
-from src.backend.controller_datastore import CombatDatastore
+from src.backend.controller_combat import CombatDatastore, CombatHandler
 
+
+logging.basicConfig(level=logging.INFO)
 router = APIRouter()
 datastore = CombatDatastore()
+combat_handler = CombatHandler()
 
 @router.get("/api/datastore/combat-queue")
 def fetch_combat_queue(include_inactive: bool = False):
@@ -25,7 +29,7 @@ async def load_combat_queue(request: Request):
         return {"status": "✅ Combat queue loaded", "count": len(entries)}
 
     except Exception as e:
-        return {"error": str(e)}
+        return {"load_combat_queue route error": str(e)}
 
 
 @router.get("/api/datastore/current-turn")
@@ -37,12 +41,10 @@ def get_current_turn():
 
 @router.post("/api/datastore/update-combat-queue")
 def update_combat_queue(data: dict):
+    logging.debug(f'update-combat-queue route calling datastore/update-combat-queue with{data}')
     try:
-        from src.backend.controller_datastore import CombatDatastore
-        db = CombatDatastore()
-
-        entries = data.get("entries", [])
-        db.replace_queue(entries)
-        return {"status": "✅ Combat queue updated"}
+        result = combat_handler.update_combat_queue(data.get("entries", []))
+        return {"status": "✅ Combat queue updated", "count": result}
     except Exception as e:
-        return {"error": str(e)}
+        logging.debug(f'update-combat-route failed to update datastore {e}')
+        return { "error": str(e)}
