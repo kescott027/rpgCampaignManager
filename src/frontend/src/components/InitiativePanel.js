@@ -6,7 +6,10 @@ import {
   FaArrowLeft,
   FaTimes,
   FaEyeSlash,
-  FaArrowRight as FaArrowTab
+  FaArrowRight as FaArrowTab,
+  FaFolderOpen,
+  FaSync,
+  FaEdit
 } from "react-icons/fa";
 
 export default function InitiativePanel({
@@ -15,98 +18,89 @@ export default function InitiativePanel({
                                           onStartCombat,
                                           onNext,
                                           onPrevious,
-                                          onUpdate,
                                           onClose,
                                           onHide,
                                           onTabView,
+                                          onUpdate,
                                           onRefresh
                                         }) {
-  const [entries, setEntries] = useState(() => {
-    if (!Array.isArray(characters)) {
-      console.warn("⚠️ InitiativePanel received non-array 'characters':", characters);
-      return [];
-    }
-    return characters.map((char) =>
-      typeof char === "string"
-        ? { name: char, initiative: "", scene: char }
-        : {
-          name: char.name || "",
-          initiative: char.initiative || "",
-          scene: char.scene || char.name || ""
-        }
-    );
-  });
-
-  useEffect(() => {
-    if (Array.isArray(characters)) {
-      setEntries(characters);
-    }
-  }, [characters]);
-
+  const [editingEntries, setEditingEntries] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
   const [settingsOpenIndex, setSettingsOpenIndex] = useState(null);
   const [sceneInput, setSceneInput] = useState("");
   const [nameInput, setNameInput] = useState("");
+  const [editMode, setEditMode] = useState(false);
+
+  useEffect(() => {
+    if (Array.isArray(characters)) {
+      setEditingEntries(characters);
+    }
+  }, [characters]);
 
   const handleChange = (index, field, value) => {
-    const updated = [...entries];
+    const updated = [...editingEntries];
     updated[index][field] = value;
-    setEntries(updated);
-    onUpdate && onUpdate(updated);
+    setEditingEntries(updated);
   };
 
-  const addEntry = () => {
-    const updated = [...entries, { name: "", initiative: "", scene: "" }];
-    setEntries(updated);
-    onUpdate && onUpdate(updated);
+
+  const handleDragStart = (index) => {
+    setDragIndex(index);
   };
 
   const handleDrop = (dropIndex) => {
     if (dragIndex === null || dropIndex === null || dragIndex === dropIndex) return;
-    const reordered = [...entries];
+    const reordered = [...editingEntries];
     const [moved] = reordered.splice(dragIndex, 1);
     reordered.splice(dropIndex, 0, moved);
-    setEntries(reordered);
-    onUpdate && onUpdate(reordered);
+    setEditingEntries(reordered);
     setDragIndex(null);
   };
 
-  const handleDelete = (index) => {
-    const updated = entries.filter((_, i) => i !== index);
-    setEntries(updated);
-    onUpdate && onUpdate(updated);
-  };
-
-  const clearAll = () => {
-    const confirmed = window.confirm("Are you sure you want to clear the entire initiative queue?");
-    if (!confirmed) return;
-    setEntries([]);
-    onUpdate && onUpdate([]);
+  const addEntry = () => {
+    const updated = [...editingEntries, { name: "", initiative: "", scene: "" }];
+    setEditingEntries(updated);
   };
 
   const handleSettingsOpen = (index) => {
     setSettingsOpenIndex(index);
-    setNameInput(entries[index]?.name || "");
-    setSceneInput(entries[index]?.scene || "");
-  };
-
-  const handleSettingsSave = () => {
-    const updated = [...entries];
-    updated[settingsOpenIndex] = {
-      ...updated[settingsOpenIndex],
-      name: nameInput.trim(),
-      scene: sceneInput.trim() || nameInput.trim()
-    };
-    setEntries(updated);
-    onUpdate && onUpdate(updated);
-    handleSettingsClose();
+    setNameInput(editingEntries[index]?.name || "");
+    setSceneInput(editingEntries[index]?.scene || "");
   };
 
   const handleSettingsClose = () => {
     setSettingsOpenIndex(null);
-    setNameInput("");
     setSceneInput("");
+    setNameInput("");
   };
+
+  const handleSettingsSave = () => {
+    const updated = [...editingEntries];
+    updated[settingsOpenIndex] = {
+      ...updated[settingsOpenIndex],
+      name: nameInput,
+      scene: sceneInput
+    };
+    setEditingEntries(updated);
+    onUpdate && onUpdate(updated);
+    handleSettingsClose();
+  };
+
+  const removeEntry = (index) => {
+    const updated = editingEntries.filter((_, i) => i !== index);
+    setEditingEntries(updated);
+    onUpdate && onUpdate(updated);
+  };
+
+  const clearQueue = () => {
+    setEditingEntries([]);
+    onUpdate && onUpdate([]);
+  };
+
+  const handleStartCombat = () => onStartCombat && onStartCombat(editingEntries);
+  const handleNext = () => onNext && onNext();
+  const handlePrevious = () => onPrevious && onPrevious();
+  const handleRefresh = () => onRefresh && onRefresh();
 
   return (
     <div className="initiative-panel" style={{
@@ -118,25 +112,20 @@ export default function InitiativePanel({
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <h4 style={{ margin: 0 }}>Initiative Tracker</h4>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button title="Close" onClick={onClose} style={{ color: "red", background: "none", border: "none" }}>
-            <FaTimes />
-          </button>
-          <button title="Hide in Dock" onClick={onHide} style={{ background: "none", border: "none" }}>
-            <FaEyeSlash />
-          </button>
-          <button title="Tab View" onClick={onTabView} style={{ color: "green", background: "none", border: "none" }}>
-            <FaArrowTab />
-          </button>
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button title="Edit" onClick={() => setEditMode(!editMode)}><FaEdit /></button>
+          <button title="Close" onClick={onClose} style={{ color: "red" }}><FaTimes /></button>
+          <button title="Hide in Dock" onClick={onHide}><FaEyeSlash /></button>
+          <button title="Tab View" onClick={onTabView}>< FaFolderOpen style={{ color: "cadetblue" }} /></button>
         </div>
       </div>
 
-      {entries.map((entry, index) => (
+      {editingEntries.map((entry, index) => (
         <div
           key={index}
           className={`initiative-entry ${index === currentIndex ? "active-slot" : ""}`}
           draggable
-          onDragStart={() => setDragIndex(index)}
+          onDragStart={() => handleDragStart(index)}
           onDragOver={(e) => e.preventDefault()}
           onDrop={() => handleDrop(index)}
           style={{
@@ -145,10 +134,13 @@ export default function InitiativePanel({
             marginBottom: "6px",
             backgroundColor: index === currentIndex ? "#f0fff4" : "transparent",
             borderLeft: index === currentIndex ? "4px solid green" : "4px solid transparent",
-            paddingLeft: "4px",
-            cursor: "move"
+            paddingLeft: "4px"
           }}
         >
+          {editMode && (
+            <button onClick={() => removeEntry(index)}
+                    style={{ marginRight: "4px", color: "red", background: "none", border: "none" }}>❌</button>
+          )}
           <input
             type="text"
             value={entry.name}
@@ -163,22 +155,20 @@ export default function InitiativePanel({
             onChange={(e) => handleChange(index, "initiative", e.target.value)}
             style={{ width: "50px", marginRight: "4px" }}
           />
-          <FaCog title="Settings" style={{ cursor: "pointer", marginRight: "4px" }}
-                 onClick={() => handleSettingsOpen(index)} />
-          <FaTimes title="Remove" style={{ cursor: "pointer", color: "red" }} onClick={() => handleDelete(index)} />
+          <FaCog style={{ cursor: "pointer" }} onClick={() => handleSettingsOpen(index)} />
         </div>
       ))}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px" }}>
+        <button onClick={handlePrevious} title="Previous Turn"><FaArrowLeft /></button>
         <button onClick={addEntry}><FaPlus /> Add</button>
-        <button onClick={clearAll}>Clear All</button>
-        <button onClick={onRefresh}>🔄 Refresh</button>
+        <button onClick={handleStartCombat}>Start Combat</button>
+        <button onClick={handleNext} title="Next Turn"><FaArrowRight /></button>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px" }}>
-        <button onClick={onPrevious} title="Previous Turn">⏪</button>
-        <button onClick={onStartCombat}>Start Combat</button>
-        <button onClick={onNext} title="Next Turn"><FaArrowRight /></button>
+        <button onClick={handleRefresh}><FaSync /> Refresh</button>
+        {editMode && <button onClick={clearQueue} style={{ color: "red" }}>Clear Queue</button>}
       </div>
 
       {settingsOpenIndex !== null && (
@@ -187,7 +177,7 @@ export default function InitiativePanel({
           background: "white", border: "1px solid #999", boxShadow: "2px 2px 10px rgba(0,0,0,0.2)",
           padding: "10px", zIndex: 100
         }}>
-          <h4>Settings</h4>
+          <h4>Settings: {editingEntries[settingsOpenIndex].name}</h4>
           <label>Character Name</label>
           <input
             type="text"
@@ -195,7 +185,7 @@ export default function InitiativePanel({
             onChange={(e) => setNameInput(e.target.value)}
             style={{ width: "100%", marginBottom: "10px" }}
           />
-          <label>Scene</label>
+          <label>Character Scene</label>
           <input
             type="text"
             value={sceneInput}
