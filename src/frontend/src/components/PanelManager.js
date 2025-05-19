@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import InitiativePanel from "./InitiativePanel";
-import CharacterPanel from "./CharacterPanel";
 import { startCombat } from "../handlers/startCombatHandler";
 import { advanceTurn, reverseTurn } from "../handlers/turnHandlers";
+import InitiativePanel from "./InitiativePanel";
+import CharacterPanel from "./CharacterPanel";
 import { persistInitiativeState } from "../utils/initSync";
 
 export default function PanelManager({
@@ -12,6 +12,7 @@ export default function PanelManager({
                                        renderCharacterPanel,
                                        setInitiativeTab,
                                        setCharactersTab
+
                                      }) {
   const [showInitiative, setShowInitiative] = useState(false);
   const [initiativeDocked, setInitiativeDocked] = useState(false);
@@ -111,35 +112,49 @@ export default function PanelManager({
       )}
 
       {showInitiative && renderInitiativePanel(false, {
-        characters: initiativeQueue,              // ✅ THIS
+        characters: initiativeQueue,
         currentIndex: currentIndex,
+
         onStartCombat: async (entries) => {
-          const sorted = await startCombat(entries);   // ← sorts, persists, sends to OBS
-          setInitiativeQueue(sorted);                  // ← update internal state
-          setCurrentIndex(0);                    // ← highlight first slot
+          const sorted = await startCombat(entries);
+          setInitiativeQueue(sorted);
+          setCurrentIndex(0);
 
           onFileSelect && onFileSelect({
             command: "/initiative",
-            timestamp: Date.now()                      // ← force UI reload if needed
+            timestamp: Date.now()
           });
         },
+
+        onRefresh: async () => {
+          const res = await fetch("/api/datastore/combat-queue");
+          const data = await res.json();
+          const updated = data.queue || [];
+          setInitiativeQueue(updated);
+        },
+
         onNext: async () => {
           const result = await advanceTurn(initiativeQueue, currentIndex);
           setCurrentIndex(result.currentIndex);
         },
+
         onPrevious: async () => {
           const result = await reverseTurn(initiativeQueue, currentIndex);
           setCurrentIndex(result.currentIndex);
         },
+
         onClose: () => setShowInitiative(false),
+
         onHide: () => {
           setShowInitiative(false);
           setInitiativeDocked(true);
         },
+
         onTabView: () => {
           setShowInitiative(false);
           setInitiativeTab(true);
         },
+
         onUpdate: async (entries) => {
           await fetch("/api/datastore/update-combat-queue", {
             method: "POST",

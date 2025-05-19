@@ -89,8 +89,9 @@ class CommandHandler(Dispatcher):
         logging.info(f"CommandHandler:{command}: {args}")
         return self.combat_handler.get_initiative_queue(command, args)
 
-    def do_init_something(self, command, args=None):
-        return None
+    def init_clear_command(self, command, args=None):
+        logging.info(f"CommandHandler:{command}: {args}")
+        return self.combat_datastore.clear_queue(args)
 
     def init_set_command(self, command, args):
         return self.combat_handler.set_initiative(args)

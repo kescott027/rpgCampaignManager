@@ -65,6 +65,14 @@ class CombatDatastore(RpgDatabase):
         logging.debug(f"CombatDatastore.get_combat_queue fetcing : {result}")
         return result
 
+
+    def clear_queue(self, args=None):
+        logging.info('Clear Queue requested - deleting current combat_queue')
+        self.write("DELETE FROM combat_queue")  # clear
+        logging.info(' Combat Queue Cleared')
+        return {"result": 200, "status": "OK"}
+
+
     def replace_queue(self, entries: list[dict]):
         logging.debug(f' replace_queue deleting current combat_queue')
         self.write("DELETE FROM combat_queue")  # clear
