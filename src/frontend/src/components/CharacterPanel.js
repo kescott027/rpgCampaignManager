@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import SidePanel from "./SidePanel";
 import CharacterSettingsModal from "./CharacterSettingsModal";
-import { FaPlus, FaPen } from "react-icons/fa";
+import { FaPlus, FaPen, FaTimes, FaEyeSlash, FaFolderOpen } from "react-icons/fa";
 
 export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRequest }) {
   const [characters, setCharacters] = useState([]);
@@ -123,142 +123,70 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
       onTabView={onTabView}
       style={{ width: "520px" }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px", alignItems: "left" }}>
-        <label>
-          <input
-            type="checkbox"
-            checked={showInactive}
-            onChange={(e) => setShowInactive(e.target.checked)}
-            style={{ marginRight: "6px" }}
-          />
-          Show Inactive
-        </label>
+      {/* Top Controls Row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+        <div>
+          <button onClick={handleAddToInitiative}><FaPlus /> Add to Initiative</button>
+          <button onClick={() => {
+            const name = prompt("Enter character name:");
+            if (!name) return;
+            fetch("/api/characters/new", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, player: false, active: true, scene: name, tags: [], conditions: [] })
+            }).then(loadCharacters);
+          }}><FaPlus /> New
+          </button>
+          <button onClick={() => setEditMode(!editMode)}><FaPen /> Edit</button>
+        </div>
+        <div>
+          <label>
+            <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+            Show Inactive
+          </label>
+          <label style={{ marginLeft: "10px" }}>
+            <input type="checkbox" checked={includeUnlabeled} onChange={(e) => setIncludeUnlabeled(e.target.checked)} />
+            Show Unlabeled
+          </label>
+        </div>
+      </div>
 
-        <label style={{ marginLeft: "10px" }}>
-          <input
-            type="checkbox"
-            checked={includeUnlabeled}
-            onChange={(e) => setIncludeUnlabeled(e.target.checked)}
-            style={{ marginRight: "6px" }}
-          />
-          Include Unlabeled
-        </label>
-
+      {/* Campaign & Search Filter */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+        <select value={campaignFilter} onChange={(e) => setCampaignFilter(e.target.value)}>
+          <option value="">All Campaigns</option>
+          {campaignList.map((c, i) => <option key={i} value={c}>{c}</option>)}
+        </select>
         <input
           type="text"
           placeholder="Search by name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ marginBottom: "10px", width: "100%", padding: "6px", border: "1px solid #ccc" }}
+
         />
-
-        <button onClick={() => {
-          const name = prompt("Enter character name:");
-          if (!name) return;
-          fetch("/api/characters/new", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name,
-              player: false,
-              active: true,
-              scene: name,
-              tags: [],
-              conditions: []
-            })
-          }).then(loadCharacters);
-        }}>
-          <FaPlus /> New
-        </button>
       </div>
 
-
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ marginRight: "8px" }}>Filter by Campaign:</label>
-        <select value={campaignFilter} onChange={(e) => setCampaignFilter(e.target.value)}>
-          <option value="">-- All --</option>
-          {campaignList.map((camp, i) => (
-            <option key={i} value={camp}>{camp}</option>
-          ))}
-        </select>
-      </div>
-
-      <button onClick={handleAddToInitiative} style={{ marginBottom: "10px" }}>
-        ➕ Add to Initiative
-      </button>
-      <button
-        onClick={() => setEditMode(!editMode)}
-        style={{
-          background: editMode ? "#ccc" : "white",
-          border: "1px solid #999",
-          marginLeft: "6px"
-        }}
-        title="Toggle Edit Mode"
-      >
-        ✏️ Edit
-      </button>
-
+      {/* Character Columns */}
       <div style={{ display: "flex", gap: "10px" }}>
-        {/* PCs */}
-        <div style={{ flex: 1 }}>
-          <h5>Players</h5>
-          {pcs.map((char, idx) => (
-            <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <input
-                type="checkbox"
-                checked={selectedIds.has(char.id)}
-                onChange={() => handleCheckboxChange(char.id)}
-              />
-              <span>{char.name}</span>
-              {editMode && (
-                <FaPen
-                  title="Edit"
-                  onClick={() => setEditingCharacter(char)}
-                  style={{ cursor: "pointer" }}
-                />
-              )}
+        {[{ title: "Players", items: pcs }, { title: "NPCs", items: npcs }, { title: "Monsters", items: monsters }]
+          .map(({ title, items }) => (
+            <div key={title} style={{ flex: 1 }}>
+              <h5>{title}</h5>
+              {items.map((char, idx) => (
+                <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(char.id)}
+                    onChange={() => handleCheckboxChange(char.id)}
+                  />
+                  <span style={{ flex: 1, textAlign: "left", marginLeft: "4px" }}>{char.name}</span>
+                  {editMode && (
+                    <FaPen title="Edit" onClick={() => setEditingCharacter(char)} style={{ cursor: "pointer" }} />
+                  )}
+                </div>
+              ))}
             </div>
           ))}
-        </div>
-
-        {/* NPCs */}
-        <div style={{ flex: 1 }}>
-          <h5>NPCs</h5>
-          {npcs.map((char, idx) => (
-            <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <input
-                type="checkbox"
-                checked={selectedIds.has(char.id)}
-                onChange={() => handleCheckboxChange(char.id)}
-              />
-              <span>{char.name}</span>
-              {editMode && (
-                <FaPen
-                  title="Edit"
-                  onClick={() => setEditingCharacter(char)}
-                  style={{ cursor: "pointer" }}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Monsters */}
-        <div style={{ flex: 1 }}>
-          <h5>Monsters</h5>
-          {monsters.map((char, idx) => (
-            <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span>{char.name}</span>
-              {editMode && (
-                <FaPen
-                  title="Edit"
-                  onClick={() => setEditingCharacter(char)}
-                  style={{ cursor: "pointer" }}
-                />
-              )}
-            </div>
-          ))}
-        </div>
       </div>
 
       {editingCharacter && (

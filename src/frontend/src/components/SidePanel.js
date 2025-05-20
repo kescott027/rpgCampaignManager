@@ -1,4 +1,5 @@
 import React from "react";
+import { FaTimes, FaEyeSlash, FaFolderOpen, FaEdit } from "react-icons/fa";
 
 export default function SidePanel({
                                     title = "Panel",
@@ -15,16 +16,17 @@ export default function SidePanel({
            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <h4 style={{ margin: 0 }}>{icon} {title}</h4>
         <div style={{ display: "flex", gap: "8px" }}>
+          <button title="Edit"><FaEdit /></button>
           {onClose && (
             <button title="Close" onClick={onClose}
-                    style={{ color: "red", background: "none", border: "none" }}>❌</button>
+                    style={{ color: "red" }}><FaTimes /></button>
           )}
           {onHide && (
-            <button title="Hide" onClick={onHide} style={{ background: "none", border: "none" }}>👁️</button>
+            <button title="Hide" onClick={onHide} style={{}}><FaEyeSlash /></button>
           )}
           {onTabView && (
             <button title="Move to Tab" onClick={onTabView}
-                    style={{ color: "green", background: "none", border: "none" }}>➡️</button>
+                    style={{ color: "cadetblue" }}><FaFolderOpen /></button>
           )}
         </div>
       </div>
