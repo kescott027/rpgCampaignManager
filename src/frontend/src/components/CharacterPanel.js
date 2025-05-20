@@ -9,6 +9,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
   const [showInactive, setShowInactive] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showSnackbar, setShowSnackbar] = useState(false);
+  const [campaignFilter, setCampaignFilter] = useState("");
 
   useEffect(() => {
     loadCharacters();
@@ -26,11 +27,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
 
   const handleCheckboxChange = (id) => {
     const newSet = new Set(selectedIds);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
+    newSet.has(id) ? newSet.delete(id) : newSet.add(id);
     setSelectedIds(newSet);
   };
 
@@ -72,10 +69,15 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
     }
   };
 
+  const campaignList = [...new Set(characters.map(c => c.campaign || "").filter(Boolean))];
 
-  const pcs = characters.filter(c => c.player && !c.tags?.includes("monster"));
-  const npcs = characters.filter(c => !c.player && !c.tags?.includes("monster"));
-  const monsters = characters.filter(c => c.tags?.includes("monster"));
+  const filteredCharacters = campaignFilter
+    ? characters.filter(c => (c.campaign || "").toLowerCase() === campaignFilter.toLowerCase())
+    : characters;
+
+  const pcs = filteredCharacters.filter(c => c.player && !c.tags?.includes("monster"));
+  const npcs = filteredCharacters.filter(c => !c.player && !c.tags?.includes("monster"));
+  const monsters = filteredCharacters.filter(c => c.tags?.includes("monster"));
 
   return (
     <SidePanel
@@ -115,6 +117,16 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
         }}>
           <FaPlus /> New
         </button>
+      </div>
+
+      <div style={{ marginBottom: "10px" }}>
+        <label style={{ marginRight: "8px" }}>Filter by Campaign:</label>
+        <select value={campaignFilter} onChange={(e) => setCampaignFilter(e.target.value)}>
+          <option value="">-- All --</option>
+          {campaignList.map((camp, i) => (
+            <option key={i} value={camp}>{camp}</option>
+          ))}
+        </select>
       </div>
 
       <button onClick={handleAddToInitiative} style={{ marginBottom: "10px" }}>
