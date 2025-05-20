@@ -12,6 +12,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
   const [campaignFilter, setCampaignFilter] = useState("");
   const [includeUnlabeled, setIncludeUnlabeled] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     loadCharacters();
@@ -86,14 +87,30 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
     );
   };
 
+  const matchesSearch = (char) =>
+    !searchTerm || char.name.toLowerCase().includes(searchTerm.toLowerCase());
+
   const pcs = characters.filter(
-    (c) => c.player && !c.tags?.includes("monster") && campaignMatches(c)
+    (c) =>
+      c.player &&
+      !c.tags?.includes("monster") &&
+      campaignMatches(c) &&
+      matchesSearch(c)
   );
+
   const npcs = characters.filter(
-    (c) => !c.player && !c.tags?.includes("monster") && campaignMatches(c)
+    (c) =>
+      !c.player &&
+      !c.tags?.includes("monster") &&
+      campaignMatches(c) &&
+      matchesSearch(c)
   );
+
   const monsters = characters.filter(
-    (c) => c.tags?.includes("monster") && campaignMatches(c)
+    (c) =>
+      c.tags?.includes("monster") &&
+      campaignMatches(c) &&
+      matchesSearch(c)
   );
 
 
@@ -127,6 +144,13 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
           Include Unlabeled
         </label>
 
+        <input
+          type="text"
+          placeholder="Search by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ marginBottom: "10px", width: "100%", padding: "6px", border: "1px solid #ccc" }}
+        />
 
         <button onClick={() => {
           const name = prompt("Enter character name:");
