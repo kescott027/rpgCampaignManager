@@ -7,7 +7,7 @@ from pathlib import Path
 from src.backend.controller_obs import OBSController
 
 
-
+logging.basicConfig(level=logging.DEBUG)
 router = APIRouter()
 obs = OBSController()
 

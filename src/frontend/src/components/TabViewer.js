@@ -1,31 +1,41 @@
 // TabViewer.js
 import React from "react";
 
-export default function TabViewer({ activeTab, onTabChange, tabs = [], tabContent = {} }) {
+export default function TabViewer({
+                                    activeTab,
+                                    onTabChange,
+                                    tabs = [],
+                                    tabContent = {}
+                                  }) {
   return (
     <div className="tab-viewer">
-      {/* Tab headers */}
-      <div className="tab-header"
-           style={{ display: "flex", gap: "10px", padding: "6px 10px", backgroundColor: "#eee" }}>
+      <div className="tab-bar" style={{ display: "flex", borderBottom: "1px solid #ccc" }}>
         {tabs.map((tab) => (
-          <button
+          <div
             key={tab}
+            role="button"
+            aria-pressed={tab === activeTab}
+            className={`tab ${tab === activeTab ? "active" : ""}`}
             onClick={() => onTabChange(tab)}
             style={{
-              padding: "5px 10px",
-              backgroundColor: tab === activeTab ? "#ddd" : "#fff",
-              border: "1px solid #ccc",
-              borderBottom: tab === activeTab ? "2px solid #333" : "1px solid #ccc",
-              fontWeight: tab === activeTab ? "bold" : "normal"
+              padding: "8px 12px",
+              cursor: "pointer",
+              borderBottom: tab === activeTab ? "2px solid green" : "none"
             }}
           >
             {tab}
-          </button>
+          </div>
         ))}
       </div>
-      {/* Tab content */}
+
       <div className="tab-body" style={{ padding: "10px" }}>
-        {tabContent[activeTab] || <div style={{ color: "#999" }}>🪹 No content for "{activeTab}" tab.</div>}
+        {tabs.includes(activeTab) ? (
+          tabContent[activeTab]
+        ) : (
+          <div role="alert" style={{ color: "#777" }}>
+            🪹 No content for "{activeTab}" tab.
+          </div>
+        )}
       </div>
     </div>
   );

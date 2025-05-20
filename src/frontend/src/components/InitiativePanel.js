@@ -1,8 +1,15 @@
-// InitiativePanel.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  FaCog, FaPlus, FaArrowRight,
-  FaTimes, FaEyeSlash, FaArrowRight as FaArrowTab
+  FaCog,
+  FaPlus,
+  FaArrowRight,
+  FaArrowLeft,
+  FaTimes,
+  FaEyeSlash,
+  FaArrowRight as FaArrowTab,
+  FaFolderOpen,
+  FaSync,
+  FaEdit
 } from "react-icons/fa";
 
 export default function InitiativePanel({
@@ -10,45 +17,55 @@ export default function InitiativePanel({
                                           currentIndex = 0,
                                           onStartCombat,
                                           onNext,
-                                          onUpdate,
+                                          onPrevious,
                                           onClose,
                                           onHide,
-                                          onTabView
+                                          onTabView,
+                                          onUpdate,
+                                          onRefresh
                                         }) {
+  const [editingEntries, setEditingEntries] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
   const [settingsOpenIndex, setSettingsOpenIndex] = useState(null);
   const [sceneInput, setSceneInput] = useState("");
   const [nameInput, setNameInput] = useState("");
+  const [editMode, setEditMode] = useState(false);
+
+  useEffect(() => {
+    if (Array.isArray(characters)) {
+      setEditingEntries(characters);
+    }
+  }, [characters]);
 
   const handleChange = (index, field, value) => {
-    const updated = [...characters];
-    updated[index] = {
-      ...updated[index],
-      [field]: value
-    };
-    onUpdate(updated);
+    const updated = [...editingEntries];
+    updated[index][field] = value;
+    setEditingEntries(updated);
   };
 
-  const addEntry = async () => {
-    const updated = [...characters, { name: "", initiative: "", scene: "" }];
-    onUpdate(updated);
 
-    try {
-      await fetch("/api/session/initiative", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order: updated })
-      });
-    } catch (err) {
-      console.error("❌ Failed to persist added entry:", err);
-    }
+  const handleDragStart = (index) => {
+    setDragIndex(index);
+  };
+
+  const handleDrop = (dropIndex) => {
+    if (dragIndex === null || dropIndex === null || dragIndex === dropIndex) return;
+    const reordered = [...editingEntries];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dropIndex, 0, moved);
+    setEditingEntries(reordered);
+    setDragIndex(null);
+  };
+
+  const addEntry = () => {
+    const updated = [...editingEntries, { name: "", initiative: "", scene: "" }];
+    setEditingEntries(updated);
   };
 
   const handleSettingsOpen = (index) => {
-    console.log("⚙ Opening settings for:", characters[index]);
     setSettingsOpenIndex(index);
-    setNameInput(characters[index]?.name || "");
-    setSceneInput(characters[index]?.scene || "");
+    setNameInput(editingEntries[index]?.name || "");
+    setSceneInput(editingEntries[index]?.scene || "");
   };
 
   const handleSettingsClose = () => {
@@ -57,102 +74,59 @@ export default function InitiativePanel({
     setNameInput("");
   };
 
-  const handleSettingsSave = async () => {
-    const original = characters[settingsOpenIndex];
-    const updatedList = [...characters];
-    const oldName = original.name;
-    const newName = nameInput;
-
-    try {
-      // Rename character if name changed
-      if (oldName !== newName) {
-        await fetch("/api/session/rename-character", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ old_name: oldName, new_name: newName })
-        });
-      }
-
-      // Update scene mapping
-      await fetch("/api/session/scene-mapping", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, scene: sceneInput })
-      });
-
-      // Update local state
-      updatedList[settingsOpenIndex] = {
-        ...original,
-        name: newName,
-        scene: sceneInput
-      };
-      onUpdate(updatedList);
-    } catch (err) {
-      console.error("❌ Failed to save character settings:", err);
-    }
-
+  const handleSettingsSave = () => {
+    const updated = [...editingEntries];
+    updated[settingsOpenIndex] = {
+      ...updated[settingsOpenIndex],
+      name: nameInput,
+      scene: sceneInput
+    };
+    setEditingEntries(updated);
+    onUpdate && onUpdate(updated);
     handleSettingsClose();
   };
 
-  const handleDragStart = (index) => {
-    setDragIndex(index);
+  const removeEntry = (index) => {
+    const updated = editingEntries.filter((_, i) => i !== index);
+    setEditingEntries(updated);
+    onUpdate && onUpdate(updated);
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault(); // allow drop
+  const clearQueue = () => {
+    setEditingEntries([]);
+    onUpdate && onUpdate([]);
   };
 
-  const handleDrop = (targetIndex) => {
-    if (dragIndex === null || dragIndex === targetIndex) return;
-    const updated = [...characters];
-    const [moved] = updated.splice(dragIndex, 1);
-    updated.splice(targetIndex, 0, moved);
-    onUpdate(updated);
-    setDragIndex(null);
-    console.log("💾 Saving new order:", updated);
-
-    // persist to backend
-    fetch("/api/session/initiative", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ order: updated })
-    }).catch((err) =>
-      console.error("❌ Failed to persist initiative order:", err)
-    );
-  };
+  const handleStartCombat = () => onStartCombat && onStartCombat(editingEntries);
+  const handleNext = () => onNext && onNext();
+  const handlePrevious = () => onPrevious && onPrevious();
+  const handleRefresh = () => onRefresh && onRefresh();
 
   return (
     <div className="initiative-panel" style={{
-      width: "260px",
+      width: "280px",
       padding: "10px",
       background: "#f8f9fa",
       borderRight: "1px solid #ccc",
       position: "relative"
     }}>
-      {/* Top controls */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <h4 style={{ margin: 0 }}>Initiative Tracker</h4>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button title="Close" onClick={onClose} style={{ color: "red", background: "none", border: "none" }}>
-            <FaTimes />
-          </button>
-          <button title="Hide in Dock" onClick={onHide} style={{ background: "none", border: "none" }}>
-            <FaEyeSlash />
-          </button>
-          <button title="Tab View" onClick={onTabView} style={{ color: "green", background: "none", border: "none" }}>
-            <FaArrowTab />
-          </button>
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button title="Edit" onClick={() => setEditMode(!editMode)}><FaEdit /></button>
+          <button title="Close" onClick={onClose} style={{ color: "red" }}><FaTimes /></button>
+          <button title="Hide in Dock" onClick={onHide}><FaEyeSlash /></button>
+          <button title="Tab View" onClick={onTabView}>< FaFolderOpen style={{ color: "cadetblue" }} /></button>
         </div>
       </div>
 
-      {/* Initiative list */}
-      {characters.map((entry, index) => (
+      {editingEntries.map((entry, index) => (
         <div
           key={index}
           className={`initiative-entry ${index === currentIndex ? "active-slot" : ""}`}
           draggable
           onDragStart={() => handleDragStart(index)}
-          onDragOver={handleDragOver}
+          onDragOver={(e) => e.preventDefault()}
           onDrop={() => handleDrop(index)}
           style={{
             display: "flex",
@@ -160,10 +134,13 @@ export default function InitiativePanel({
             marginBottom: "6px",
             backgroundColor: index === currentIndex ? "#f0fff4" : "transparent",
             borderLeft: index === currentIndex ? "4px solid green" : "4px solid transparent",
-            paddingLeft: "4px",
-            cursor: "move"
+            paddingLeft: "4px"
           }}
         >
+          {editMode && (
+            <button onClick={() => removeEntry(index)}
+                    style={{ marginRight: "4px", color: "red", background: "none", border: "none" }}>❌</button>
+          )}
           <input
             type="text"
             value={entry.name}
@@ -178,64 +155,29 @@ export default function InitiativePanel({
             onChange={(e) => handleChange(index, "initiative", e.target.value)}
             style={{ width: "50px", marginRight: "4px" }}
           />
-          <FaCog
-            title="Settings"
-            style={{ cursor: "pointer" }}
-            onClick={() => handleSettingsOpen(index)}
-          />
+          <FaCog style={{ cursor: "pointer" }} onClick={() => handleSettingsOpen(index)} />
         </div>
       ))}
 
-      {/* Buttons */}
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={addEntry} style={{ marginRight: "10px" }}>
-          <FaPlus /> Add
-        </button>
-
-        <button onClick={() => onStartCombat(characters)}>
-          Start Combat
-        </button>
-
-        <button onClick={onNext} title="Next Turn" style={{ float: "right", marginTop: "5px" }}>
-          <FaArrowRight />
-        </button>
-
-        <button
-          onClick={async () => {
-            try {
-              const res = await fetch("/api/session/command", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ command: "/rebuild" })
-              });
-              const data = await res.json();
-              console.log("🔁 Initiative rebuilt:", data.response);
-              if (data.characters) {
-                onUpdate(data.characters.map(name => ({
-                  name,
-                  initiative: "",
-                  scene: data.scene_mapping?.[name] || `${name} Scene`
-                })));
-              }
-            } catch (err) {
-              console.error("❌ Failed to rebuild initiative:", err);
-            }
-          }}
-          title="Reset and rebuild initiative state"
-          style={{ float: "left", marginTop: "5px", marginRight: "10px", background: "#ffc107" }}
-        >
-          🔁 Reset
-        </button>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px" }}>
+        <button onClick={handlePrevious} title="Previous Turn"><FaArrowLeft /></button>
+        <button onClick={addEntry}><FaPlus /> Add</button>
+        <button onClick={handleStartCombat}>Start Combat</button>
+        <button onClick={handleNext} title="Next Turn"><FaArrowRight /></button>
       </div>
 
-      {/* Settings Modal */}
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px" }}>
+        <button onClick={handleRefresh}><FaSync /> Refresh</button>
+        {editMode && <button onClick={clearQueue} style={{ color: "red" }}>Clear Queue</button>}
+      </div>
+
       {settingsOpenIndex !== null && (
         <div style={{
           position: "absolute", top: "30%", left: "10%", width: "80%",
           background: "white", border: "1px solid #999", boxShadow: "2px 2px 10px rgba(0,0,0,0.2)",
           padding: "10px", zIndex: 100
         }}>
-          <h4>Settings: {characters[settingsOpenIndex].name}</h4>
+          <h4>Settings: {editingEntries[settingsOpenIndex].name}</h4>
           <label>Character Name</label>
           <input
             type="text"

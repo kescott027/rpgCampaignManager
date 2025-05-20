@@ -5,6 +5,7 @@ from .controller_security import SecretCheckResponse, SecretPayload
 router = APIRouter()
 
 
+
 @router.get("/api/secrets/check", response_model=SecretCheckResponse)
 async def check_secrets():
     from pathlib import Path

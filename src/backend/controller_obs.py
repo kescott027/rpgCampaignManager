@@ -6,10 +6,14 @@ import obsws_python as obs
 from src.backend.controller_configuration import Configuration as Config
 from src.backend.utility_file import json_loader
 
+logging.basicConfig(level=logging.DEBUG)
+
 
 class OBSController:
-    def __init__(self, host='localhost', port=4455, password=None):
-        self.config = Config()
+    def __init__(self, host='localhost', port=4455, password=None, source='Unknown'):
+        self.source = source
+        logging.debug(f'{source} launching OBSController')
+        self.config = Config(source='OBSController')
         self.host = host
         self.port = port
         self.password = ""
@@ -89,3 +93,24 @@ class OBSController:
             return "⏹️ Recording stopped"
         else:
             return f"⚠️ Unknown recording action '{action}'"
+
+
+
+class OBSCommandHandler:
+    def __init__(self, source='Unknown'):
+        self.proxy = OBSController(source='OBSCommandHandler')
+        self.source = source
+        logging.debug(f'{source} launching OBSController')
+
+    def scene(self, command, args):
+        logging.info(f"OBSCommandHandler calling command: {command} args: {args}")
+        if not args:
+            return {"response": "⚠️ Usage: /obs scene = <SceneName>"}
+
+        scene = args.replace('scene =', '').strip()
+
+        logging.info(f"sending scene change to proxy {scene}")
+        self.proxy.change_scene(scene)
+        return {"response": f"🎬 Scene changed to '{scene}'"}
+
+        return {"response": "⚠️ Invalid OBS command. Use /obs scene = <SceneName>"}

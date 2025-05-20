@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 import requests
 from urllib.parse import urlencode
 from fastapi import APIRouter, Request, Response
@@ -8,12 +9,12 @@ from src.backend.controller_auth import save_token
 from src.backend.controller_drive import handle_google_oauth_callback
 
 
+logging.basicConfig(level=logging.DEBUG)
 router = APIRouter()
 
 CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("REDIRECT_URI")
-# REDIRECT_URI = "http://localhost:8000/api/oauth/callback"
 
 
 @router.get("/api/oauth/login")

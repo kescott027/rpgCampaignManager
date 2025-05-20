@@ -1,233 +1,131 @@
 #.src.backend.controller_command.py
+import collections
 import json
 import logging
+import re
+import requests
+from src.backend.controller_combat import CombatDatastore, CombatHandler
 from src.backend.controller_configuration import Configuration
-from src.backend.controller_obs import OBSController
 from src.backend.controller_gpt import GPTProxy
-from src.backend.utility_help import slash_command_help
+from src.backend.controller_help import HelpCommandHandler
+from src.backend.controller_initiative import InitiativeCommandHandler
+from src.backend.controller_obs import OBSController, OBSCommandHandler
+from src.backend.controller_show import ShowCommandHandler
+from src.backend.controller import Parser, Dispatcher
+
+logging.basicConfig(level=logging.DEBUG)
 
 
-class CommandInterpreter:
-    def __init__(self):
-        self.config = Configuration()
-        self.obs_proxy = OBSController()
-        self.gpt_proxy = GPTProxy()
+class CommandHandler(Dispatcher):
+    def __init__(self, source='Unknown'):
+        super().__init__()
+        self.source = source
+        logging.debug(f'{source} launching Storage controller')
+        self.config = Configuration(source='CommandHandler')
+        self.help = HelpCommandHandler(source='CommandHandler')
+        self.show_handler = ShowCommandHandler(source='CommandHandler')
+        self.obs_handler = OBSCommandHandler(source='CommandHandler')
+        self.obs_proxy = OBSController(source='CommandHandler')
+        self.gpt_proxy = GPTProxy(source='CommandHandler')
+        self.initiative_handler = InitiativeCommandHandler(source='CommandHandler')
+        self.combat_handler = CombatHandler(source='CommandHandler')
+        self.combat_datastore = CombatDatastore(source='CommandHandler')
+        self.url = "http://localhost:8000"
+        self.headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer your_token'}
 
-    def parse_command(self, command, args=None):
-        logging.info(f"Command Interpreter parsing command /{command} {args}")
-        command_method = getattr(self, command, self.command_default)
-        return command_method(command, args)
 
 
     def command_default(self, command, args):
-
-        logging.error(f"Error calling command /{command} {args}")
-        reply = f"unknown command /{command} {args}"
+        logging.debug(f"Error calling command /{command} {args}")
+        reply = f"unknown command /{command} {args}\nTry /help for available commands"
         return {"response": reply}
 
 
-    def gpt(self, request, prompt):
+    def gpt_command(self, request, prompt):
+        return self.gpt_handler(request, prompt)
 
-        logging.info(f"calling command {request} {prompt}")
-        reply = self.gpt_proxy.send(prompt)
+
+    def get_command(self, command, args):
+        url = f"{self.url}{args}"
+
+        # try:
+        # response = requests.get(self.url, headers=self.headers, params=None)
+        response = requests.get(url, params=None)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        return {"response": response}
+
+        # except requests.exceptions.RequestException as e:
+        #     logging.error(f"GET Request failed: {e}")
+        #     reply = None
+
         return {"response": reply}
 
 
-    def obs(self, command, args):
+    def post_command(self, command, params):
+        reply = None
+        return {"response": reply}
 
-        logging.info(f"calling command {command} {args}")
-        if args.pop(0) == "scene":
-            return self.scene("scene", args)
 
-        return {"response": "⚠️ Usage: /obs scene = <SceneName>"}
+    def help_command(command, args=None):
+        return self.help(command, args)
+
+
+    def interface(self, user_input):
+        class_namne = self.__classname__
+        logging.debug(f"{class_namne} dispatching parsing command /{user_input}")
+        command, args, error = self.parser(user_input, trigger='/')
+        if error:
+            return {"response": error}
+
+        return self.dispatcher(command, args, default_method='command_default')
+
+
+    def initiative_command(self, command, args=None):
+        logging.info(f"CommandHandler:{command}: {args}")
+        return self.initiative_handler.initiative(command, args)
+
+
+    def init_get_command(self, command, args=None):
+        logging.info(f"CommandHandler:{command}: {args}")
+        return self.combat_handler.get_initiative_queue(command, args)
+
+    def init_clear_command(self, command, args=None):
+        logging.info(f"CommandHandler:{command}: {args}")
+        return self.combat_datastore.clear_queue(args)
+
+    def init_set_command(self, command, args):
+        return self.combat_handler.set_initiative(args)
 
 
     @staticmethod
-    def help(command, args=None):
-        response = slash_command_help(command, args)
-
-        return {"response": response}
-
-
-    def rebuild(self, command, args=None):
-        logging.info("🔁 Rebuilding initiative tracker from scratch")
-
-        characters = self.config.cached_configs.get("characters", [])
-
-        # Reset initiative-related fields
-        self.config.cached_configs["initiative_order"] = []
-        self.config.cached_configs["initiative_values"] = {}
-        self.config.cached_configs["initiative_pending"] = characters + ["GM"]
-        self.config.cached_configs["current_slot"] = 0
-        self.config.cached_configs["first_pass_done"] = False
-
-        # Rebuild scene mapping if needed
-        scene_map = {name: name for name in characters}
-        self.config.cached_configs["scene_mapping"] = scene_map
-
-        self.config.cached_configs["initiative_order"] = [
-            { "name": name, "initiative": 0, "scene": scene_map[name] }
-            for name in characters
-        ]
-
-        self.config.write_cached_configs()
-
-        return {
-            "response": f"✅ Initiative system rebuilt. Ready for new inputs.",
-            "characters": characters,
-            "scene_mapping": scene_map
-        }
-
-
-    def scene(self, command, args):
-        logging.info(f"calling command {command} {args}")
-
-        filtered_list = list(filter(lambda x: "=" not in x, args))
-        scene = " ".join(filtered_list)
-        self.obs_proxy.change_scene(scene)
-
-        return {"response": f"🎬 Scene changed to '{scene}'"}
-
-    def submit(self, command, args):
-        logging.info(f"calling command {command} {args}")
-        if command and command[0] == "initiative":
-            name = args[1] if len(args) > 2 else None
-            value = int(args[2]) if len(args) > 2 and args[2].isdigit() else 0
-
-            if name:
-                self.config.cached_configs["initiative_values"][name] = value
-                pending = self.config.cached_configs["initiative_pending"]
-                self.config.cached_configs["initiative_pending"] = [n for n in pending if n != name]
-
-                if not self.config.cached_configs["initiative_pending"]:
-                    sorted_order = sorted(
-                        self.config.cached_configs["initiative_values"].items(),
-                        key=lambda x: x[1],
-                        reverse=True
-                    )
-                    final_order = [entry[0] for entry in sorted_order]
-                    self.config.cached_configs["initiative_order"] = final_order
-                    self.config.cached_configs["current_slot"] = 0
-
-                self.config.write_cached_configs()
-                return {"response": f"✅ Initiative order set: {', '.join(final_order)}"}
-
-            else:
-                next_up = self.config.cached_configs["initiative_pending"][0]
-                self.config.write_cached_configs()
-                return {"response": f"📝 What is {next_up}'s initiative?"}
-
-        return {"response": "⚠️ Usage: /submit initiative Kolby 18"}
-
-
-    def next_action(self, command, args=None):
+    def log_command(command, args=None):
         if not args:
-            args = ""
-        logging.info(f"calling command {command} {args}")
+            args = ['empty', 'console logs requested from command line']
+        logging.warning(f"{' '.join(args)}")
+        return
 
-        order = self.config.cached_configs.get("initiative_order", [])
-        if not order:
-            return {"response": "⚠️ Initiative not started. Use /initiative first."}
-
-        index = self.config.cached_configs.get("current_slot", 0)
-
-        # Get current entry FIRST
-        current = order[index]
-        current_name = current["name"] if isinstance(current, dict) else current
-        scene = current.get("scene") if isinstance(current, dict) else None
-        logging.info(f"next is processing current order index: {current}: {current_name} scene: {scene}")
-
-        # Fallback to scene_mapping if needed
-        if not scene:
-            scene = self.config.cached_configs.get("scene_mapping", {}).get(current_name, f"{current_name}")
-
-        # Advance slot after resolving current
-        self.config.cached_configs["current_slot"] = (index +1) % len(order)
-        self.config.write_cached_configs()
-
-        try:
-            self.obs_proxy.change_scene(scene)
-        except Exception as e:
-            logging.error(f"OBS scene change failed: {e}")
-
-        return {
-            "response": f"🎯 It is now {current_name}'s turn! (Scene: {scene})",
-            "current": current_name,
-            "current_index": index
-    }
+    def next_action_command(self, command, args=None):
+        return self.initiative_handler.next_action(command, args)
 
 
-    def initiative(self, command, args=None):
-
-        if not args:
-            args = ""
-        logging.info(f"calling command {command} {args}")
-
-        characters = self.config.cached_configs.get("characters", [])
-
-        if not self.config.cached_configs.get("initiative_values"):
-            self.config.cached_configs["initiative_values"] = {}
-
-        return {
-            "order": self.config.cached_configs.get("initiative_order", []),
-            "characters": self.config.cached_configs.get("characters", [])
-        }
+    def obs_command(self, command, args):
+        return self.obs_handler.scene(command, args)
 
 
-    def set_action(self, command, args=None):
-
-        if not args:
-            args = ""
-        logging.info(f"calling command {command} {args}")
-
-        if command.lower().startswith("characters"):
-
-            characters = [name.strip() for name in remainder[len("characters"):].split(",") if name.strip()]
-            scene_map = {name: f"{name}" for name in characters}
-            self.config.cached_configs.update({
-                "characters": characters,
-                "scene_mapping": scene_map,
-                "initiative_order": [],
-                "current_slot": 0
-            })
-
-            self.config.write_cached_configs()
-
-            return {"response": f"✅ Characters set: {', '.join(characters)}"}
-
-        return {"response": f"Unknown set command, expected 'set characters'"}
+    def previous_action_command(self, command, args=None):
+        return self.initiative_handler.previous_action(command, args)
 
 
-    def reset_slot(self, command, args=None):
-        self.config.cached_configs["current_slot"] = 0
-        self.config.write_cached_configs()
-        return {"response": "🔁 Initiative index reset to 0"}
+    def reset_slot_command(self, command, args=None):
+        return self.initiative_handler.reset_slot(command, args)
 
 
-    def override(self, command, args):
-        logging.info(f"overriding in-memory config: {command} {args}")
-        # overrides an existing configuration in memory #
+    def set_action_command(self, command, args=None):
+        return self.initiative_handler.set_action(command, args)
 
-        override_field = args.pop(0)
-        equals = args.pop(0) if args[0] == "=" else None
-        assembled = "".join(args)
+    def show_command(self, command, args=None):
+        return self.show_handler.show(command, args)
 
-        if (assembled.find("{")>=0) and (assembled.find("}")>=0):
-            # treat as json and convert to a dict
-            data_type = "dict"
-            override_data = json.loads(assembled)
 
-        elif (assembled.find("[]")>=0) and (assembled.find("[]")>=0):
-            # make back into a list
-            data_type = "list"
-            override_data = assembled.split()
 
-        else:
-            # just leave as a string
-            data_type = "string"
-            override_data = assembled
 
-        # override in cached_configs
-        self.config.update_cached(override_field, override_data)
-
-        return{"response": f"overriding {override_field} as {data_type}: {override_data}"}

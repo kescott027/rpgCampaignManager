@@ -1,14 +1,19 @@
 import os
 import io
+import logging
 from typing import List
 from src.backend.utility_file import json_loader, project_root, open_file, write_file
 from src.backend.controller_configuration import Configuration as Config
 
 
+logging.basicConfig(level=logging.DEBUG)
+
+
 class StorageController:
 
-    def __init__(self):
-
+    def __init__(self, source='Unknown'):
+        self.source = source
+        logging.debug(f'{source} launching Storage controller')
         self.config = Config()
         self.assets_directory = None
         self.local_storage_root = None

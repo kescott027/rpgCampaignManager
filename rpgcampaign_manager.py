@@ -29,7 +29,7 @@ def launch_backend():
             sys.executable,
             "-m",
             "uvicorn",
-            "src.backend.api_service:app",  # updated module path
+            "src.backend.api_service:app",
             "--reload",
             "--port",
             str(BACKEND_PORT),
@@ -47,7 +47,7 @@ def launch_frontend():
 
 def open_browser():
     time.sleep(2)
-    # logging.info(f"🔗 Opening {FRONTEND_URL}")
+    logging.debug(f"🔗 Opening {FRONTEND_URL}")
     webbrowser.open(FRONTEND_URL)
 
 
@@ -69,6 +69,7 @@ if __name__ == "__main__":
         # if os.path.exists(token_path):
         #     os.remove(token_path)
 
-        #gracefully shut down backend and frontend
+        # gracefully shut down backend and frontend
         backend_proc.terminate()
         frontend_proc.terminate()
+        logging.info("Shut down successful.")

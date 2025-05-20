@@ -1,11 +1,12 @@
 import os
+import logging
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse, FileResponse
 from typing import Optional, List, Iterator, cast
 
 
 BASE_DIR = os.path.abspath("../../assets/my_campaigns")
-
+logging.basicConfig(level=logging.DEBUG)
 router = APIRouter()
 
 

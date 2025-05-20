@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from pathlib import Path
 from urllib.parse import urlencode
 from fastapi.responses import RedirectResponse
@@ -19,12 +20,12 @@ def drive_login():
         "access_type": "offline",
         "prompt": "consent",
     }
-    print("")
+
     try:
         response = RedirectResponse(f"{auth_url}?{urlencode(params)}")
-        print(f"retrieved: {response}")
+        lottint.info(f"retrieved: {response}")
     except Exceptions as e:
-        print(e)
+        logging.error(e)
         raise ValueError(e)
 
 

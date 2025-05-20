@@ -1,35 +1,61 @@
 {
+  "RULESET": {
+    "RulesetID": "string, name of the ruleset for example Pathfinder, or DnD",
+    "RulesetVersion": "string, version id for example 2e, 5e, 2.0"
+  },
+  "CAMPAIGN": {
+    "CampaignID": "string (unique canonical name)",
+    "CampaignRuleSet": "string, references RulesetID from RULESET",
+    "CampaignActive": "boolean, whether the campaign is active or finished",
+    "CampaignStartDate": "date - start date of the campaign",
+    "CampaignEndDate": "date or none",
+    "CharacterList": "a list of EntityIDs from ENTITY",
+    "OneShot": "boolean"
+  },
+  "SESSION": {
+    "SessionID": "string unique session name",
+    "SessionDate": "date",
+    "SessionActiveCharacters": "list of characters active in the session",
+    "SessionSynopsis": "None, or a description of what occurred",
+    "Campaign": "string (CampaignID from Campaign",
+    "Tags": "list of strings"
+  },
   "ENTITY": {
-    "Entity ID": "string (unique canonical name)",
-    "Entity Type": "string (one of: GM, Player, Player Character, Non Player Character, Group, Place, Thing)",
-    "Entity Aliases": "list of strings (alternate names or nicknames)",
-    "Entity Status": "list of strings (Status ID references in GM Mode)",
-    "Entity Relationships": "list of strings (Relationship ID references in GM Mode)"
+    "EntityID": "string (unique canonical name)",
+    "EntityProfile": "linked character profile from characters DB if any",
+    "EntityAssets": "List of links to documents, images or other assets related to this entity",
+    "EntityActive": "boolean, whether the entity is active (e.g. alive) or not",
+    "EntityType": "string (one of: GM, Player, Player Character, Non Player Character, Group, Place, Thing)",
+    "EntityAliases": "list of strings (alternate names or nicknames)",
+    "EntityStatus": "list of strings (Status ID references in GM Mode)",
+    "EntityRelationships": "list of strings (Relationship ID references in GM Mode)",
+    "Tags": "list of strings"
   },
   "RELATIONSHIP": {
-    "Relationship ID": "string (20-character unique alphanumeric ID)",
-    "Relationship Principal": "string (Entity ID)",
-    "Relationship Description": "string (≤100 characters, past tense, uses [Entity] tags)",
-    "Relationship Related Entities": "list of strings (Entity IDs)",
-    "Relationship Tags": "list of strings (Principal first, then related entities, verbs, and conceptual tags)"
+    "RelationshipID": "string (20-character unique alphanumeric ID)",
+    "RelationshipPrincipal": "string (EntityID from ENTITY)",
+    "RelationshipDescription": "string (≤100 characters, past tense, uses [Entity] tags)",
+    "RelationshipRelatedEntities": "list of strings (Entity IDs)",
+    "Tags": "list of strings (Principal first, then related entities, verbs, and conceptual tags)"
   },
   "STATUS": {
-    "Status Event ID": "string (must match an existing Event ID)",
-    "Status Principal": "string (Entity ID, or 'Orphan' if unresolved)",
-    "Status ID": "string (format: Status Principal:Status Event ID)",
-    "Status Related Entities": "list of strings (Entity IDs)",
-    "Status Description": "string (≤100 characters, past tense, uses [Entity] tags)",
-    "Status Active": "boolean (true if currently valid)",
-    "Status Tags": "list of strings (Principal first, then related, verbs, and concept tags)"
+    "StatusEventID": "string (must match an existing Event ID)",
+    "StatusPrincipal": "string (Entity ID, or 'Orphan' if unresolved)",
+    "StatusID": "string (format: Status Principal:Status Event ID)",
+    "StatusRelatedEntities": "list of strings (Entity IDs)",
+    "StatusDescription": "string (≤100 characters, past tense, uses [Entity] tags)",
+    "StatusActive": "boolean (true if currently valid)",
+    "Tags": "list of strings (Principal first, then related, verbs, and concept tags)"
   },
   "EVENT": {
-    "Event Timestamp": "string (format yyyyMMdd:HH:mm:ss.SSS)",
-    "Event Description": "string (≤100 characters, past tense, uses [Entity] references)",
+    "EventTimestamp": "string (format yyyyMMdd:HH:mm:ss.SSS)",
+    "EventDescription": "string (≤100 characters, past tense, uses [Entity] references)",
     "Source": "string (one of: Campaign, Novel, Both)",
     "Book": "integer (default 0 if unknown)",
     "Chapter": "string (default 'Unspecified' if unknown)",
     "Session": "string (campaign session label)",
     "Index": "integer (incremented for uniqueness)",
-    "Event ID": "string (format: Source:Book:Chapter:Session:Timestamp:Index)"
+    "EventID": "string (format: Source:Book:Chapter:Session:Timestamp:Index)",
+    "Tags": "list of strings"
   }
 }

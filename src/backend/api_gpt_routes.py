@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from fastapi import APIRouter, Request, Query, FastAPI
 from fastapi.responses import JSONResponse
 from openai import OpenAI
@@ -8,11 +9,10 @@ from .controller_gpt import GPTProxy
 from .controller_security import secure_path, GptLoader, get_gpt_key
 # from src.backend.controller_configuration import Configuration as Config
 
-
+logging.basicConfig(level=logging.DEBUG)
 router = APIRouter()
-# CONFIG = Config()
 client = OpenAI(api_key=get_gpt_key())
-proxy = GPTProxy()
+proxy = GPTProxy(source='api_gpt_routes')
 
 
 @router.post("/api/gpt/proxy")

@@ -6,37 +6,32 @@ import os
 import json
 import logging
 
-
 logging.basicConfig(level=logging.DEBUG)
 
 
 def json_loader(file_path, op='r'):
-    logging.debug(f'utility_file.json_loader starting...')
+
     try:
-        logging.debug(f'json loader loading from path {file_path}')
         if not os.path.exists(file_path):
-            logging.error(f"utility_file.json_loader is unable to find file {file_path}.  No object returned")
+            logging.error(f" failed to find file {file_path}.  No object loaded")
 
         with open(file_path, op) as f:
-            logging.debug(f"utility_file.json_loader: opening file {file_path}")
             json_file = json.load(f)
-            logging.debug(f"json file {file_path} complete: {json_file}")
+            logging.debug(f" json file {file_path} loaded successfully")
 
             return json_file
 
     except FileNotFoundError:
         logging.error(
-            f"Error utility_file.json_loader: Error: File not found: {file_path}")
+            f" Error utility_file.json_loader: Error: File not found: {file_path}")
         return None
 
     except json.JSONDecodeError:
-        logging.error(
-            f"Error: utility_file.json_loader: Invalid JSON format in file: {file_path}")
+        logging.error(message=f" Error: utility_file.json_loader: Invalid JSON format in file: {file_path}")
         return None
 
     except Exception as error:
-         logging.error(
-            f"Error: utility_file.json_loader: An unexpected error occurred: {error}")
+         logging.error(f" Error: utility_file.json_loader: An unexpected error occurred: {error}")
          return None
 
 
@@ -65,10 +60,10 @@ def write_file(file):
         with open(filename, "w", encoding="utf-8") as file:
             file.write(data)
 
-        logging.info(f"Successfully wrote data to '{filename}'")
+        logging.debug(f"Successfully wrote data to '{filename}'")
 
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
+        logging.error(f"An error occurred while attempting to write file {filename}: {e}")
 
 
 def open_file(file):
@@ -77,7 +72,7 @@ def open_file(file):
         with open(file_path, "r", encoding="utf-8") as file:
             content = file.read()
 
-        logging.info(f"opened file {file_path} in read mode")
+        logging.debug(f"opened file {file_path} in read mode")
         return content
 
     except FileNotFoundError:

@@ -1,0 +1,36 @@
+// import { persistInitiativeState } from "../utils/initSync";
+import { sendSceneToOBS } from "../utils/obsUtils";
+import { sortInitiative, getCurrentEntry, normalizeAll } from "./initiativeUtils";
+
+export async function startCombat(entries) {
+  // 1. Normalize + sort
+  const normalized = normalizeAll(entries);
+  const sorted = sortInitiative(normalized);
+  //await persistInitiativeState(sorted);
+
+  // 2. Save to backend
+  await fetch("/api/datastore/update-combat-queue", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ entries: sorted })
+  });
+
+  // 3. Reload from backend to guarantee freshness
+  const res = await fetch("/api/datastore/combat-queue");
+  const data = await res.json();
+  const reloaded = data.queue || [];
+
+  // 4. Reset backend slot
+  await fetch("/api/session/command", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ command: "/reset_slot 0" })
+  });
+
+  // 5. Send OBS scene update for first character
+  const active = getCurrentEntry(reloaded, 0);
+  const scene = active?.scene || active?.name;
+  await sendSceneToOBS(scene);
+
+  return reloaded;
+}

@@ -2,6 +2,7 @@ import logging
 import sys
 import os.path
 import json
+import logging
 import google.auth
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -10,11 +11,17 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from src.backend.controller_configuration import Configuration as Config
 
+
+logging.basicConfig(level=logging.DEBUG)
+
+
 class DriveController:
 
-    def __init__(self):
-        self.application_configs = Config()
-        self.token_file =self.application_configs.drive_token_path
+    def __init__(self, source='Unknown'):
+        self.source = source
+        logging.debug(f'DriveController launched by:[{source}]')
+        self.application_configs = Config(source='DriveController')
+        self.token_file=self.application_configs.drive_token_path
         if not self.token_file:
             self.token_file = os.path.join(
            self.application_configs.secrets_path, ".token.json"
@@ -36,10 +43,10 @@ class DriveController:
 
             except json.decoder.JSONDecodeError:
                 logging.error(
-                    "failed to decode token - continue to creds create_service")
+                    "DriveController.create_service: failed to decode token - continue to creds create_service")
             except AttributeError:
                 logging.error(
-                    "key file is a  Nonetype object, continue to creds create_service")
+                    "DriveController.create_service: file is a  Nonetype object, continue to creds create_service")
 
         if not self.credentials or not self.credentials.valid:
             if self.credentials and self.credentials.expired and self.credentials.refresh_token:
@@ -66,7 +73,7 @@ class DriveController:
 
         except HttpError as error:
             logging.error(
-            f"api_drive_controller drive_create_service generated \
+            f"DriveController.create_service: api_drive_controller drive_create_service generated \
              an Http error when building credentials: {error}")
 
             self.service = None
@@ -100,16 +107,16 @@ class DriveController:
 
 
     def get_service(self):
-        logging.info('service requested, verifying service exists...')
+        logging.info('DriveController.get_service: service requested, verifying service exists...')
         if not self.service:
-            logging.info("no defined service, calling create service method")
+            logging.info("DriveController.get_service: No defined service when calling create service method")
             self.service = self.create_service()
 
             if not self.service:
-                logging.error('Service not found after a call to src.backdend.controller_drive.get_service')
+                logging.error('DriveController.get_service: Service not found after a call to src.backdend.controller_drive.get_service')
                 return None
 
-        logging.info('service created')
+        logging.info('DriveController.get_service: Service created')
         return self.service
 
 
@@ -121,19 +128,19 @@ class DriveController:
         service = self.service
 
         if not service:
-            raise ValueError('controller_drive.list_files failed to retrive files from drive')
+            raise ValueError('DriveController.list_files failed to retrive files from drive')
 
         # First get the id of the parent to work with:
         try:
 
             if not by_id:
                 parent_id = self.find_file_by_name(folder, directory=True)['files'][0]['id']
-                logging.debug(f"retrieving id of folder {folder}: {parent_id} ")
+                logging.debug(f"DriveController.list_files: retrieving id of folder {folder}: {parent_id} ")
             else:
                 parent_id = folder
 
         except Exception as error:
-            logging.error(f'failure to find id of folder {folder} : {error} ')
+            logging.error(f'DriveController.list_files: failure to find id of folder {folder} : {error} ')
             return [], error
 
         try:
@@ -156,12 +163,12 @@ class DriveController:
 
                 if not next_token:
                     break # No more pages
-            logging.debug(f"operation complete returning files:{files}")
+            logging.debug(f"DriveControllerl.list_files operation complete returning files:{files}")
             return files, None
 
         except HttpError as error:
 
-            logging.error(f"An error occurred: {error}")
+            logging.error(f"DriveController.list_files: An error occurred whilst executing controller_drive list_files: {error}")
             return [], error
 
 
@@ -171,7 +178,7 @@ class DriveController:
 
         if not service:
             logging.error(
-            f"backend/controller_drive unable to create service from client")
+            f"DriveController.list_folder_contents: backend/controller_drive unable to create service from client")
             return []
 
         file_query = f"'\'{folder_id}\'' in parents"
@@ -184,15 +191,17 @@ class DriveController:
 
         service = build("drive", "v3", credentials=self.credentials)
         if not service:
-            logging(
-                "controller_drive.search_files has no valid service after service build")
+            logging.info(
+                "DriveController.search_files: search_files has no valid service after service build")
             return []
 
         files = []
         page_token = None
+
         # temporarily update query manually
         # query = f"'mimeType != 'application/vnd.google-apps.folder''"
         #query = f"'Cthulhu' in parents"# and mimeType='application/vnd.google-apps.folder'"
+
         query="mimeType = 'application/vnd.google-apps.folder'",
         #
         try:
@@ -218,7 +227,7 @@ class DriveController:
 
         except HttpError as error:
 
-            logging.error(f"An error occurred: {error}")
+            logging.error(f"DriveController.search_files: An error occurred whilst executing controller_drive search_files: {error}")
             return None, error
 
 
@@ -237,7 +246,7 @@ class DriveController:
 
         except HttpError as error:
 
-            logging.error(f"An error occurred: {error}")
+            logging.error(f"DriveController.find_file_by_name: An error occurred whilst executing controller_drive find_file_by_name: {error}")
             return None, error
 
 
@@ -249,12 +258,12 @@ class DriveController:
         Returns : IO object with location.
         """
 
-        logging.info(f"download requested for file {real_file_id}")
+        logging.info(f"DriveController.download_file: requested for file {real_file_id}")
 
         service, error = self.get_service
 
         if not service or error:
-            logging.error(f"download failed due to auth error: {error}")
+            logging.error(f"DriveController.download_file: download failed due to auth error: {error}")
             return 1, error
 
         try:
@@ -268,14 +277,14 @@ class DriveController:
 
             while not done:
                 status, done = downloader.next_chunk()
-                logging.info(f"Download {int(status.progress() * 100)}.")
+                logging.info(f"DriveController: Download {int(status.progress() * 100)}.")
 
-            logging.info(f"Download completed without errors")
+            logging.info(f"DriveController.download_file: completed without errors")
             return 0, None
 
         except HttpError as error:
 
-            logging.error(f"An error occurred: {error}")
+            logging.error(f"DriveController.download_file: error occurred: {error}")
             return 1, error
 
 

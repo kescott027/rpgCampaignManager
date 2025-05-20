@@ -7,13 +7,14 @@ from fastapi import APIRouter, Query, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from google.oauth2.credentials import Credentials
 import google.oauth2._client
-from src.backend.controller_configuration import Configuration as Config
+# from src.backend.controller_configuration import Configuration as Config
 from src.backend.controller_drive import DriveController
 from src.backend.controller_localstore import open_file
 
 
+logging.basicConfig(level=logging.DEBUG)
 router = APIRouter()
-DRIVE_CONTROLLER = DriveController()
+DRIVE_CONTROLLER = DriveController(source='api_drive_routes')
 
 
 @router.get("/api/drive/login")
@@ -81,6 +82,7 @@ async def drive_file(request: Request, file_id: str):
         logging.error("❌ Failed to read file:", e)
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+
 @router.get("/api/drive/listid")
 async def google_drive_list(request: Request, folderId: str = None, by_id=True):
 
@@ -93,7 +95,6 @@ async def google_drive_list(request: Request, folderId: str = None, by_id=True):
         return []
 
     return results
-
 
 
 @router.get("/api/drive/list")

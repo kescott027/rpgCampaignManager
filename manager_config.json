@@ -23,5 +23,41 @@
     "Keep responses structured and concise unless told otherwise."
   ],
   "obs_host": "localhost",
-  "obs_port": 4455
+  "obs_port": 4455,
+  "character_schema": {
+    "name": null,
+    "player": null,
+    "player_name:": null,
+    "scene": null,
+    "campaign": null,
+    "active": null,
+    "image": null,
+    "datafile": null,
+    "ac": null,
+    "hp": null,
+    "perception": null,
+    "will": null,
+    "fortitude": null,
+    "reflex": null,
+    "conditions": [],
+    "notes": ""
+  },
+  "character_schema_datatypes": {
+    "name": "str",
+    "player": "str",
+    "player_name:": "str",
+    "scene": "str",
+    "campaign": "str",
+    "active": "bool",
+    "image": "str",
+    "datafile": "str",
+    "ac": "int",
+    "hp": "int",
+    "perception": "int",
+    "will": "int",
+    "fortitude": "int",
+    "reflex": "int",
+    "conditions": "list",
+    "notes": "str"
+  }
 }
