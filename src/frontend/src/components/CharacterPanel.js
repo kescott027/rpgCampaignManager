@@ -10,6 +10,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [campaignFilter, setCampaignFilter] = useState("");
+  const [includeUnlabeled, setIncludeUnlabeled] = useState(true);
 
   useEffect(() => {
     loadCharacters();
@@ -75,9 +76,25 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
     ? characters.filter(c => (c.campaign || "").toLowerCase() === campaignFilter.toLowerCase())
     : characters;
 
-  const pcs = filteredCharacters.filter(c => c.player && !c.tags?.includes("monster"));
-  const npcs = filteredCharacters.filter(c => !c.player && !c.tags?.includes("monster"));
-  const monsters = filteredCharacters.filter(c => c.tags?.includes("monster"));
+  const campaignMatches = (char) => {
+    if (!campaignFilter) return true;
+    if (includeUnlabeled && !char.campaign) return true;
+    return (
+      typeof char.campaign === "string" &&
+      char.campaign.toLowerCase() === campaignFilter.toLowerCase()
+    );
+  };
+
+  const pcs = characters.filter(
+    (c) => c.player && !c.tags?.includes("monster") && campaignMatches(c)
+  );
+  const npcs = characters.filter(
+    (c) => !c.player && !c.tags?.includes("monster") && campaignMatches(c)
+  );
+  const monsters = characters.filter(
+    (c) => c.tags?.includes("monster") && campaignMatches(c)
+  );
+
 
   return (
     <SidePanel
@@ -88,7 +105,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
       onTabView={onTabView}
       style={{ width: "520px" }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px", alignItems: "left" }}>
         <label>
           <input
             type="checkbox"
@@ -98,6 +115,17 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
           />
           Show Inactive
         </label>
+
+        <label style={{ marginLeft: "10px" }}>
+          <input
+            type="checkbox"
+            checked={includeUnlabeled}
+            onChange={(e) => setIncludeUnlabeled(e.target.checked)}
+            style={{ marginRight: "6px" }}
+          />
+          Include Unlabeled
+        </label>
+
 
         <button onClick={() => {
           const name = prompt("Enter character name:");
@@ -118,6 +146,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
           <FaPlus /> New
         </button>
       </div>
+
 
       <div style={{ marginBottom: "10px" }}>
         <label style={{ marginRight: "8px" }}>Filter by Campaign:</label>
