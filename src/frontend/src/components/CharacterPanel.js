@@ -11,6 +11,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [campaignFilter, setCampaignFilter] = useState("");
   const [includeUnlabeled, setIncludeUnlabeled] = useState(true);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     loadCharacters();
@@ -161,6 +162,17 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
       <button onClick={handleAddToInitiative} style={{ marginBottom: "10px" }}>
         ➕ Add to Initiative
       </button>
+      <button
+        onClick={() => setEditMode(!editMode)}
+        style={{
+          background: editMode ? "#ccc" : "white",
+          border: "1px solid #999",
+          marginLeft: "6px"
+        }}
+        title="Toggle Edit Mode"
+      >
+        ✏️ Edit
+      </button>
 
       <div style={{ display: "flex", gap: "10px" }}>
         {/* PCs */}
@@ -174,7 +186,13 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
                 onChange={() => handleCheckboxChange(char.id)}
               />
               <span>{char.name}</span>
-              <FaPen title="Edit" onClick={() => setEditingCharacter(char)} style={{ cursor: "pointer" }} />
+              {editMode && (
+                <FaPen
+                  title="Edit"
+                  onClick={() => setEditingCharacter(char)}
+                  style={{ cursor: "pointer" }}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -190,7 +208,13 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
                 onChange={() => handleCheckboxChange(char.id)}
               />
               <span>{char.name}</span>
-              <FaPen title="Edit" onClick={() => setEditingCharacter(char)} style={{ cursor: "pointer" }} />
+              {editMode && (
+                <FaPen
+                  title="Edit"
+                  onClick={() => setEditingCharacter(char)}
+                  style={{ cursor: "pointer" }}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -201,7 +225,13 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
           {monsters.map((char, idx) => (
             <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span>{char.name}</span>
-              <FaPen title="Edit" onClick={() => setEditingCharacter(char)} style={{ cursor: "pointer" }} />
+              {editMode && (
+                <FaPen
+                  title="Edit"
+                  onClick={() => setEditingCharacter(char)}
+                  style={{ cursor: "pointer" }}
+                />
+              )}
             </div>
           ))}
         </div>
