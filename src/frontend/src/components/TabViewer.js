@@ -13,6 +13,8 @@ export default function TabViewer({
         {tabs.map((tab) => (
           <div
             key={tab}
+            role="button"
+            aria-pressed={tab === activeTab}
             className={`tab ${tab === activeTab ? "active" : ""}`}
             onClick={() => onTabChange(tab)}
             style={{
@@ -27,7 +29,13 @@ export default function TabViewer({
       </div>
 
       <div className="tab-body" style={{ padding: "10px" }}>
-        {tabContent[activeTab]}
+        {tabs.includes(activeTab) ? (
+          tabContent[activeTab]
+        ) : (
+          <div role="alert" style={{ color: "#777" }}>
+            🪹 No content for "{activeTab}" tab.
+          </div>
+        )}
       </div>
     </div>
   );
