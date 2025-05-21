@@ -4,6 +4,8 @@ import TabbedContent from "./TabbedContent";
 import DriveListing from "./DriveListing";
 import InitiativePanel from "./InitiativePanel";
 import CharacterPanel from "./CharacterPanel";
+import StickyNote from "./StickyNote";
+
 
 export default function DisplayWindow({ filePath, initialTab = "Markdown", onFileSelect }) {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -12,6 +14,41 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
 
   const [initiativeTab, setInitiativeTab] = useState(false);
   const [charactersTab, setCharactersTab] = useState(false);
+  const [stickyNotes, setStickyNotes] = useState([]);
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+
+    for (const file of files) {
+      const type = file.type;
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const id = Date.now();
+        const note = {
+          id,
+          type: type.startsWith("image") ? "image" : "markdown",
+          content: reader.result,
+          position: {
+            top: e.clientY - 50,
+            left: e.clientX - 50
+          }
+        };
+        setStickyNotes(prev => [...prev, note]);
+      };
+
+      if (type.startsWith("image")) {
+        reader.readAsDataURL(file);
+      } else if (type === "text/markdown" || "text/plain") {
+        reader.readAsText(file);
+      }
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
 
   useEffect(() => {
     if (!filePath || typeof filePath !== "string") return;
@@ -38,7 +75,10 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   const showFile = filePath?.type === "drive-file";
 
   return (
-    <div className="display-window" style={{ display: "flex", position: "relative" }}>
+    <div className="display-window" style={{ display: "flex", position: "relative" }}
+         onDrop={handleDrop}
+         onDragOver={handleDragOver}
+    >
       <PanelManager
         filePath={filePath}
         onFileSelect={onFileSelect}
@@ -47,9 +87,11 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
         renderInitiativePanel={(isTab, controls) => <InitiativePanel {...controls} />}
         renderCharacterPanel={(isTab, controls) => <CharacterPanel {...controls}
                                                                    onCommandRequest={(cmd) => onFileSelect(cmd)} />}
+
       />
 
       <div style={{ flex: 1 }}>
+
         {filePath?.type === "drive-listing" ? (
           <DriveListing filePath={filePath} onFileSelect={onFileSelect} />
         ) : filePath?.type === "drive-file" ? (
@@ -65,7 +107,18 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
             charactersTab={charactersTab}
           />
         )}
+
       </div>
+      {stickyNotes.map(note => (
+        <StickyNote
+          key={note.id}
+          id={note.id}
+          type={note.type}
+          content={note.content}
+          position={note.position}
+          onClose={(id) => setStickyNotes(notes => notes.filter(n => n.id !== id))}
+        />
+      ))}
     </div>
   );
 }

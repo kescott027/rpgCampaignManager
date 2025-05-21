@@ -17,9 +17,9 @@ export default function TabbedContent({
       activeTab={activeTab}
       onTabChange={setActiveTab}
       tabs={[
-        "Markdown",
-        "JSON",
+        "FileBrowser",
         "Images",
+        "Archives",
         ...(initiativeTab ? ["Initiative"] : []),
         ...(charactersTab ? ["Characters"] : []),
         "ChatGPT"
