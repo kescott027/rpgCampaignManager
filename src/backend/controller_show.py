@@ -46,14 +46,14 @@ class ShowCommandHandler(Dispatcher):
 
 
     def _show_initiative_queue(self):
-        from src.backend.controller_datastore import CombatDatastore
-        db = CombatDatastore()
+        from src.backend.dataHandler import CombatDataHandler
+        db = CombatDataHandler()
         queue = db.get_combat_queue(include_inactive=True)
         return {"response": f" Initiative Queue: {queue}"}
 
 
     def _show_characters(self):
-        from src.backend.controller_characters import CharacterDatastore
-        db = CharacterDatastore()
+        from src.backend.datahandler_characters import CharacterDataHandler
+        db = CharacterDataHandler()
         chars = db.get_characters(include_inactive=True)
         return {"response": f"👥 Characters: {chars}"}

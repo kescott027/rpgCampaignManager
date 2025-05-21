@@ -45,7 +45,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
     }));
 
     try {
-      const res = await fetch("/api/datastore/load-combat-queue", {
+      const res = await fetch("/api/combat/load-combat-queue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entries })

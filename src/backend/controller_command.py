@@ -4,11 +4,10 @@ import json
 import logging
 import re
 import requests
-from src.backend.controller_combat import CombatDatastore, CombatHandler
+from src.backend.datahandler_combat import CombatDataHandler, CombatHandler, InitiativeCommandHandler
 from src.backend.controller_configuration import Configuration
 from src.backend.controller_gpt import GPTProxy
 from src.backend.controller_help import HelpCommandHandler
-from src.backend.controller_initiative import InitiativeCommandHandler
 from src.backend.controller_obs import OBSController, OBSCommandHandler
 from src.backend.controller_show import ShowCommandHandler
 from src.backend.controller import Parser, Dispatcher
@@ -29,7 +28,7 @@ class CommandHandler(Dispatcher):
         self.gpt_proxy = GPTProxy(source='CommandHandler')
         self.initiative_handler = InitiativeCommandHandler(source='CommandHandler')
         self.combat_handler = CombatHandler(source='CommandHandler')
-        self.combat_datastore = CombatDatastore(source='CommandHandler')
+        self.combat_datahandler = CombatDataHandler(source='CommandHandler')
         self.url = "http://localhost:8000"
         self.headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer your_token'}
 
@@ -91,9 +90,10 @@ class CommandHandler(Dispatcher):
 
     def init_clear_command(self, command, args=None):
         logging.info(f"CommandHandler:{command}: {args}")
-        return self.combat_datastore.clear_queue(args)
+        return self.combat_datahandler.clear_queue(args)
 
     def init_set_command(self, command, args):
+        logging.info(f"CommandHandler:{command}:  {args}")
         return self.combat_handler.set_initiative(args)
 
 

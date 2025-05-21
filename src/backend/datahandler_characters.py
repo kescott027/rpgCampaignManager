@@ -1,7 +1,7 @@
-from .controller_datastore import RpgDatabase
+from .datahandler import RpgDatabase
 import json
 
-class CharacterDatastore(RpgDatabase):
+class CharacterDataHandler(RpgDatabase):
     def __init__(self):
         super().__init__()
         self.init()

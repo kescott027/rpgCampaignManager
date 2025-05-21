@@ -41,7 +41,7 @@ export default function PanelManager({
 
         const loadInitiativeQueue = async () => {
           try {
-            const res = await fetch("/api/datastore/combat-queue");
+            const res = await fetch("/api/combat/combat-queue");
             const data = await res.json();
             const queue = data.queue || [];
             setInitiativeQueue(queue);
@@ -57,7 +57,7 @@ export default function PanelManager({
         setInitiativeTab(false);
 
         // Fetch initiative queue from datastore
-        fetch("/api/datastore/combat-queue")
+        fetch("/api/combat/combat-queue")
           .then((res) => res.json())
           .then((data) => {
             const queue = data.queue || [];
@@ -127,7 +127,7 @@ export default function PanelManager({
         },
 
         onRefresh: async () => {
-          const res = await fetch("/api/datastore/combat-queue");
+          const res = await fetch("/api/combat/combat-queue");
           const data = await res.json();
           const updated = data.queue || [];
           setInitiativeQueue(updated);
@@ -156,13 +156,13 @@ export default function PanelManager({
         },
 
         onUpdate: async (entries) => {
-          await fetch("/api/datastore/update-combat-queue", {
+          await fetch("/api/combat/update-combat-queue", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ entries })
           });
 
-          const res = await fetch("/api/datastore/combat-queue");
+          const res = await fetch("/api/combat/combat-queue");
           const data = await res.json();
           setInitiativeQueue(data.queue || []);
         }

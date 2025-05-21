@@ -1,14 +1,91 @@
 import json
 import logging
-from src.backend.controller_datastore import RpgDatabase
+from src.backend.datahandler import RpgDatabase
 import sqlite3
 
-class CombatDatastore(RpgDatabase):
+class InitiativeCommandHandler:
+    def __init__(self, source='Unknown'):
+        self.source = source
+        logging.debug(f'{source} launching InitiativeCommandHandler')
+        self.combat_handler = CombatDataHandler(source='InitiativeCommandHandler')
+
+    def rebuild(self, command, args=None):
+        return None
+
+
+    def submit(self, command, args):
+        return None
+
+
+    def initiative(self, command, args):
+
+        flag = None
+        logging.error(f"initiative_controller:initiative call: {command} {args}")
+        if args == 'include_inactive':
+            flag = include_inactive=True
+        initiative = self.combat_handler.get_combat_queue(command, flag)
+
+        return None
+
+    def previous_action(self, command, args=None):
+       from src.backend.dataHandler import CombatDataHandler
+       db = CombatDataHandler()
+
+       prev = db.reverse_turn()
+       if not prev:
+           return {"response": "⚠️ Cannot go back — no combatants."}
+
+       name = prev["name"]
+       scene = prev.get("scene") or name
+
+       try:
+           self.obs_proxy.change_scene(scene)
+       except Exception as e:
+           logging.error(f"❌ OBS scene update failed: {e}")
+
+       return {
+           "response": f"🔁 Reversed to {name}'s turn. (Scene: {scene})",
+           "current": name,
+           "current_index": prev["current_index"]
+       }
+
+
+    def next_action(self, command, args=None):
+       from src.backend.dataHandler import CombatDataHandler
+       db = CombatDataHandler()
+
+       next_entry = db.advance_turn()
+
+       if not next_entry:
+           return {"response": "⚠️ No active combatants."}
+
+       name = next_entry["name"]
+       scene = next_entry.get("scene") or name
+       index = next_entry["current_index"]
+
+       try:
+           self.obs_proxy.change_scene(scene)
+       except Exception as e:
+           logging.error(f"❌ OBS scene update failed: {e}")
+
+       return {
+           "response": f"🎯 It is now {name}'s turn! (Scene: {scene})",
+           "current": name,
+           "current_index": index,
+           "scene": scene
+           }
+
+
+    def reset_slot(self, command, args=None):
+        return None
+
+
+class CombatDataHandler(RpgDatabase):
     def __init__(self, source='Unknown'):
         self.source = source
         logging.debug(f'{source} launching OBSController')
-        logging.debug(f'controller_combat.CombatDatabase.__init__() ')
-        logging.debug(f'controller_combat:CombatDatastore calling superclass RpgDatabase.__init__()')
+        logging.debug(f'datahandler_combat.CombatDatabase.__init__() ')
+        logging.debug(f'datahandler_combat:CombatDataHandler calling superclass RpgDatabase.__init__()')
         super().__init__()
 
         # inherited attributes:
@@ -62,7 +139,7 @@ class CombatDatastore(RpgDatabase):
             }
             for current_character in initiative_queue
         ])
-        logging.debug(f"CombatDatastore.get_combat_queue fetcing : {result}")
+        logging.debug(f"CombatDataHandler.get_combat_queue fetcing : {result}")
         return result
 
 
@@ -247,8 +324,8 @@ class CombatHandler:
     def __init__(self, source='Unknown'):
         self.source = source
         logging.debug(f'{source} launching CombatHandler')
-        self.datastore = CombatDatastore()
-        self.db = self.datastore.database_path('cm_datastore.db')
+        self.DataHandler = CombatDataHandler()
+        self.db = self.DataHandler.database_path('cm_datastore.db')
 
 
     @staticmethod
@@ -257,7 +334,6 @@ class CombatHandler:
 
     def get_character_pool():
         return
-
 
 
     def get_initiative_queue(self, command, args=None, include_inactive=None):
@@ -271,7 +347,7 @@ class CombatHandler:
 
         try:
 
-            initiative_queue = self.datastore.read(executable=command)
+            initiative_queue = self.DataHandler.read(executable=command)
 
         except Exception as error:
             raise ValueError(command, error)
@@ -291,21 +367,17 @@ class CombatHandler:
         requests = args.split()
         params = []
 
-        try:
-            while len(requests)>0:
-                char = requests.pop(0)
-                init = requests.pop(0)
-                params.append( (init, char) )
+        #try:
+        while len(requests)>0:
+            char = requests.pop(0)
+            init = requests.pop(0)
+            params.append( (init, char) )
 
-            with sqlite3.connect(self.db) as conn:
-                cursor = conn.cursor()
-                for initiative, name in params:
-                    logging.info(f"setting initiative for {name} to {initiative}")
-                    cursor.execute(
-                        "UPDATE combat_queue SET initiative = ? WHERE name = ?",
-                        (initiative, name)
-                    )
-                conn.commit()
+        command = "UPDATE combat_queue SET initiative = ? WHERE name = ?"
+        try:
+            for initiative, character in params:
+                self.DataHandler.write(command, (initiative, character))
+                logging.info(f"CombatHandler.set_initiative: initiative for {character} to {initiative}")
 
         except Exception as error:
 
@@ -320,8 +392,8 @@ class CombatHandler:
         if not isinstance(entries, list):
             raise ValueError("Entries must be a list of dicts")
 
-        logging.debug(f' datastore/update-combat-queue sending {entries}to replace_queue')
-        self.datastore.replace_queue(entries)
+        logging.debug(f' DataHandler/update-combat-queue sending {entries}to replace_queue')
+        self.DataHandler.replace_queue(entries)
 
         return len(entries)
 

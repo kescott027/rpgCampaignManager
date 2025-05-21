@@ -1,4 +1,4 @@
-# controller_datastore.py
+# dataHandler.py
 import sqlite3
 import json
 import logging
@@ -6,19 +6,21 @@ import os
 from pathlib import Path
 from src.backend.controller_configuration import Configuration
 
+
+logging.basicConfig(level=logging.DEBUG)
 DB_PATH = Path("cm_datastore.db")
 
 
 class RpgDatabase:
     def __init__(self, source='Unknown'):
         self.source = source
-        logging.debug(f'{source} launching Storage controller.datastore.RpgDatabase')
+        logging.debug(f'{source} launching Storage controller.DataHandler.RpgDatabase')
         self.config = Configuration()
         self.db_path = self.database_path('cm_datastore.db')
-        logging.debug(f'controller_datastore.RpgDatabase.__init__ launching')
+        logging.debug(f'dataHandler.RpgDatabase.__init__ launching')
 
     def database_path(self, db_name):
-        logging.debug(f'controller_datastore.RpgDatabase.database_path - db_name {db_name}')
+        logging.debug(f'dataHandler.RpgDatabase.database_path - db_name {db_name}')
         db_path = os.path.join(
                 self.config.root_directory,
                 self.config.current_configs.get('local_assets_directory'),
@@ -32,7 +34,7 @@ class RpgDatabase:
         return
 
     def read(self, executable, rows=None):
-        logging.debug(f'controller_datastore.RpgDatabase.read:  {executable} rows={str(rows)}')
+        logging.debug(f'dataHandler.RpgDatabase.read:  {executable} rows={str(rows)}')
         conn = self.connect()
         cursor = conn.cursor()
 
@@ -45,7 +47,7 @@ class RpgDatabase:
 
         conn.commit()
         conn.close()
-
+        logging.debug(f"sending response: {response}")
         return response
 
 
@@ -63,7 +65,7 @@ class RpgDatabase:
 
 
     def write(self, executable, params=None):
-        logging.debug(f'controller_datastore.RpgDatabase.write:  {executable} params={str(params)}')
+        logging.debug(f'dataHandler.RpgDatabase.write:  {executable} params={str(params)}')
 
         conn = self.connect()
         cursor = conn.cursor()
@@ -72,12 +74,12 @@ class RpgDatabase:
 
         conn.commit()
         conn.close()
-
+        logging.debug(f"write complete: {result}")
         return result
 
 
     def connect(self):
-        logging.debug(f'controller_datastore.RpgDatabase.connect:  {self.db_path}')
+        logging.debug(f'dataHandler.RpgDatabase.connect:  {self.db_path}')
         return sqlite3.connect(self.db_path)
 
 
