@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Rnd } from "react-rnd";
+import { loadStickyNotes, saveStickyNotes } from "../utils/stickyNoteSync";
+
 
 export default function StickyNote({ id, content, type, initialPos, initialSize, onClose, onUpdate }) {
   const [position, setPosition] = useState(initialPos || { x: 100, y: 100 });
   const [dragOffset, setDragOffset] = useState(null);
   const [size, setSize] = useState(initialSize || { width: 240, height: 180 });
+
 
   const handleMouseDown = (e) => {
     setDragOffset({
@@ -28,6 +31,7 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
 
   const handleMouseUp = () => {
     setDragOffset(null);
+    // saveStickyNotes(StickyNote);
   };
 
   const handleResizeStop = (e, direction, ref, delta, position) => {
@@ -35,6 +39,7 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
     setSize(newSize);
     setPosition(position);
     onUpdate && onUpdate(id, { position: position, size: newSize });
+    // saveStickyNotes(StickyNote);
   };
 
 
@@ -47,6 +52,8 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
       return <p>Unsupported type</p>;
     }
   };
+
+  // saveStickyNotes(StickyNote);
 
   return (
     <Rnd
@@ -62,6 +69,14 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
       style={{ zIndex: 10, background: "#fff9c4", border: "1px solid #ccc", boxShadow: "2px 2px 6px rgba(0,0,0,0.1)" }}
       onDragStop={handleDragStop}
       onResizeStop={handleResizeStop}
+      style={{
+        zIndex: 20,
+        background: "#ffffcc",
+        border: "1px solid #ccc",
+        boxShadow: "2px 2px 4px rgba(0,0,0,0.2)",
+        padding: "4px",
+        overflow: "hidden"
+      }}
     >
       <div style={{ width: "100%", height: "100%", padding: "5px", position: "relative" }}>
         <button

@@ -35,33 +35,60 @@ class RpgDatabase:
 
     def read(self, executable, rows=None):
         logging.debug(f'dataHandler.RpgDatabase.read:  {executable} rows={str(rows)}')
-        conn = self.connect()
-        cursor = conn.cursor()
+        try:
+            conn = self.connect()
+            cursor = conn.cursor()
 
-        cursor.execute(executable)
+            cursor.execute(executable)
 
-        if rows:
-            response = cursor.fetchmany(rows)
-        else:
-            response = cursor.fetchall()
+            if rows:
+                response = cursor.fetchmany(rows)
+            else:
+                response = cursor.fetchall()
 
-        conn.commit()
-        conn.close()
-        logging.debug(f"sending response: {response}")
-        return response
+            conn.commit()
+            conn.close()
+            # logging.debug(f"sending response: {response}")
+            return response
+
+        except sqlite3.OperationalError as error:
+            ui_error_msg = f'Error: Failed to read from database'
+            logging.error(ui_error_msg)
+            logging.debug(f'datahandler.read failed read operation: {error}')
+            return {ui_error_msg}
+
+        except Exception as e:
+            ui_error_msg = f'Error: Failed to communicate with database'
+            logging.error(ui_error_nsg)
+            logging.debug(f'datahandler.read failed read operation: {error}')
+            return {ui_error_msg}
 
 
     def dataset_write(self, executable, params):
         result = {}
-        with self.connect() as conn:
-            cursor = conn.cursor()
-            for key, value in params.items():
-                cursor.execute(
-                    executable,
-                    (key, value)
-                )
-        conn.commit()
-        con.close()
+        try:
+            with self.connect() as conn:
+                cursor = conn.cursor()
+                for key, value in params.items():
+                    cursor.execute(
+                        executable,
+                        (key, value)
+                    )
+            conn.commit()
+            con.close()
+            return {'200 Operation Successful'}
+
+        except sqlite3.OperationalError as error:
+            ui_error_msg = f'Failed to write to database, error'
+            logging.error(ui_error_msg)
+            logging.debug(f'datahandler.write failed write operation: {error}')
+            return {ui_error_msg}
+
+        except Exception as e:
+            ui_error_msg = f'Error: Failed to communicate with database'
+            logging.error(ui_error_msg)
+            logging.debug(f'datahandler.write failed write operation: {error}')
+            return {ui_error_msg}
 
 
     def write(self, executable, params=None):
@@ -74,7 +101,7 @@ class RpgDatabase:
 
         conn.commit()
         conn.close()
-        logging.debug(f"write complete: {result}")
+        # logging.debug(f"write complete: {result}")
         return result
 
 

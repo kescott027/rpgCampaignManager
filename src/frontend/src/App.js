@@ -12,6 +12,8 @@ export default function App() {
   const [devMode, setDevMode] = useState(false);
   // const debug = require ('debug')('my_module')
 
+  const [showSidebar, setShowSidebar] = useState(true);
+
 
   useEffect(() => {
     fetch("/manager_config.json")
@@ -26,7 +28,26 @@ export default function App() {
 
   return (
     <div className="app-container">
-      <Sidebar onFileSelect={handleFileSelect} />
+      {showSidebar && <Sidebar onFileSelect={handleFileSelect} />}
+      <button
+        onClick={() => setShowSidebar(prev => !prev)}
+        title={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+        style={{
+          position: "absolute",
+          left: showSidebar ? 260 : 0,  // offset when sidebar is visible
+          top: 10,
+          zIndex: 0,
+          background: "#444",
+          color: "#fff",
+          border: "none",
+          padding: "6px 10px",
+          borderRadius: "4px",
+          cursor: "pointer"
+          // pointerEvents: "none"
+        }}
+      >
+        {showSidebar ? "⏴" : "⏵"}
+      </button>
       <div className="split-wrapper">
         <Split
           direction="vertical"
@@ -38,6 +59,9 @@ export default function App() {
             filePath={selectedFile}
             initialTab={initialTab}
             onFileSelect={handleFileSelect}
+            /**style={[
+              zIndex: 1
+            ]}**/
           />
           <ChatSection
             filePath={selectedFile}

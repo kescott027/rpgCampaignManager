@@ -5,6 +5,8 @@ json_loader = reused code for loading a json file to memory
 import os
 import json
 import logging
+import secrets
+import string
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -82,3 +84,12 @@ def open_file(file):
     except Exception as e:
         logging.error(f"An error occurred: {e}")
         return None
+
+
+def random_string_generator(length, characters=string.ascii_letters + string.digits):
+    return ''.join(random.choice(characters) for _ in range(length))
+
+
+def secure_random_string_generator(length):
+    return ''.join(
+        secrets.choice(string.ascii_letters + string.digits) for _ in range(length))

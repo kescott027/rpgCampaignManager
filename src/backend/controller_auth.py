@@ -63,3 +63,23 @@ def delete_token(session_id: str):
         # with open(SESSION_STORE, "w") as f:
         with open(Path(os.environ("SESSION_SORE")), "w") as f:
             json.dump(store, f)
+
+
+class AuthHandler:
+    def __init__(RpgDatabase):
+        super().__init__()
+        self.user_table = "user_table"
+
+
+    def validate_token(self, user, token):
+        # should return true by exception, False by default
+        table = self.user_table
+        authentication_implemented = False
+        if not authentication_implemented return True
+
+        # make sure the token is not expired
+        # make sure the token is a real token
+        # check token hash against k,v token store
+        # make sure the token matches the user
+        # if all of thsoe return true
+        return False
