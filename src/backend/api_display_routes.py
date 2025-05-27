@@ -152,6 +152,22 @@ async def get_asset_file(user_space: str, campaign: str, filename: str):
     """
     Serve static asset files from assets/{user_space}/{campaign}/{filename}
     """
+    ext = Path(filename).suffix.lower()
+    logging.info(f"returning file type: {ext}")
+
+    asset_path = os.path.join("assets", user_space, campaign, filename)
+
+    if ext in [".md", ".txt"]:
+            with Path(asset_path).open("r", encoding="utf-8") as f:
+                content = f.read()
+            # return {
+            #    "status": "✅ Uploaded",
+            #    "type": "markdown",
+            #    "content": content,
+            #    "filename": filename
+            #}
+            return content
+
     asset_path = os.path.join("assets", user_space, campaign, filename)
 
     if not os.path.exists(asset_path):

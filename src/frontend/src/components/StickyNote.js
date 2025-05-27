@@ -8,7 +8,7 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
   const [dragOffset, setDragOffset] = useState(null);
   const [size, setSize] = useState(initialSize || { width: 240, height: 180 });
 
-
+const [noteContent, setNoteContent] = useState(type === "markdown" ? "Loading..." : content);
   const handleMouseDown = (e) => {
     setDragOffset({
       x: e.clientX - position.left,
@@ -42,10 +42,32 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
     // saveStickyNotes(StickyNote);
   };
 
+  useEffect(() => {
+    if (type !== "markdown") return;
+    if (typeof content !== "string" || !content.includes(".")) {
+      console.warn("⛔ Invalid markdown content path:", content);
+      return;
+    }
+
+    const normalizedPath = content.startsWith("/") ? content : `/${content}`;
+    console.log("📄 Fetching markdown from:", normalizedPath);
+
+    fetch(normalizedPath)
+      .then((res) => {
+        if (!res.ok) throw new Error("Bad response");
+        return res.text();
+      })
+      .then((text) => setNoteContent(text))
+      .catch((err) => {
+        console.error("❌ Failed to load markdown content:", err);
+        setNoteContent("❌ Failed to load markdown");
+      });
+  }, [type, content]);
+
 
   const renderContent = () => {
     if (type === "markdown") {
-      return <pre style={{ whiteSpace: "pre-wrap" }}>{content}</pre>;
+      return <pre style={{ whiteSpace: "pre-wrap" }}>{noteContent}</pre>;
     } else if (type === "image") {
       return <img src={content} alt="Image" style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
     } else {
@@ -97,7 +119,9 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
         >
           ✕
         </button>
-        <div style={{ width: "100%", height: "100%", overflow: "auto" }}>{renderContent()}</div>
+        <div style={{ width: "100%", height: "100%", overflow: "auto" }}>
+          {renderContent()}
+        </div>
       </div>
     </Rnd>
   );

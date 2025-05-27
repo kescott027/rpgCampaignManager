@@ -104,17 +104,17 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   }, [stickyNotes]);
 
 
-  const handleDrop = async (e) => {
-    e.preventDefault();
-    console.log("📦 Files dropped:", e.dataTransfer.files);
+const handleDrop = async (e) => {
+  e.preventDefault();
+  console.log("📦 Files dropped:", e.dataTransfer.files);
 
-    const files = Array.from(e.dataTransfer.files);
+  const files = Array.from(e.dataTransfer.files);
 
-    try {
-      for (const file of files) {
-        const type = file.type;
+  try {
+    for (const file of files) {
+      const type = file.type;
 
-        const formData = new FormData();
+      const formData = new FormData();
         formData.append("file", file);
 
         formData.append("layout", currentLayout || "default");
@@ -126,38 +126,39 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
           body: formData
         });
 
-        const uploadData = await uploadRes.json();
-        const assetPath = uploadData.asset_path;
-        console.log("Returned assetPath:", assetPath);
+      const uploadData = await uploadRes.json();
+      const assetPath = uploadData.asset_path;
+      console.log("Returned assetPath:", assetPath);
 
-        const reader = new FileReader();
+      const reader = new FileReader();
 
-        if (type.startsWith("image")) {
-          reader.onload = () => {
-            const id = Date.now();
-            const note = {
-              id,
-              type: "image",
-              content: assetPath,  // now correctly scoped
-              position: {
-                top: e.clientY - 50,
-                left: e.clientX - 50
-              },
-              size: { width: 240, height: 180 }
-            };
-            setStickyNotes(prev => {
-              const updated = [...prev, note];
-              saveStickyNotes(currentLayout, updated);
-              console.log("Sticky note created:", note);
-              return updated;
-            });
-          };
+      reader.onload = () => {
+        const id = Date.now();
+        const note = {
+          id,
+          type: type.startsWith("image") ? "image" : "markdown",
+          content: assetPath,
+          position: {
+            top: e.clientY - 50,
+            left: e.clientX - 50
+          },
+          size: { width: 240, height: 180 }
+        };
+        setStickyNotes(prev => {
+          const updated = [...prev, note];
+          saveStickyNotes(currentLayout, updated);
+          console.log("Sticky note created:", note);
+          return updated;
+        });
+      };
 
-          reader.readAsDataURL(file);  // Just triggers load
-        } else if (type === "text/markdown" || type === "text/plain") {
-          reader.readAsText(file);
-        }
+
+      if (type.startsWith("image")) {
+        reader.readAsDataURL(file);  // Just to trigger reader.onload
+      } else if (type === "text/markdown" || type === "text/plain") {
+        reader.readAsText(file);
       }
+    }
 
 
     } catch (err) {
