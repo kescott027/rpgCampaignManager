@@ -150,3 +150,11 @@ body, html, .app-container {
   border-left: 4px solid green;
   font-weight: bold;
 }
+
+.sticky-markdown h1 {
+  font-size: 1.2em;
+}
+
+.sticky-markdown p {
+  margin: 4px 0;
+}

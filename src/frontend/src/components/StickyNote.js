@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Rnd } from "react-rnd";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { loadStickyNotes, saveStickyNotes } from "../utils/stickyNoteSync";
 
 
@@ -8,7 +10,7 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
   const [dragOffset, setDragOffset] = useState(null);
   const [size, setSize] = useState(initialSize || { width: 240, height: 180 });
 
-const [noteContent, setNoteContent] = useState(type === "markdown" ? "Loading..." : content);
+  const [noteContent, setNoteContent] = useState(type === "markdown" ? "Loading..." : content);
   const handleMouseDown = (e) => {
     setDragOffset({
       x: e.clientX - position.left,
@@ -57,7 +59,22 @@ const [noteContent, setNoteContent] = useState(type === "markdown" ? "Loading...
         if (!res.ok) throw new Error("Bad response");
         return res.text();
       })
-      .then((text) => setNoteContent(text))
+      .then((text) => {
+        let cleaned = text.trim();
+
+        // Remove leading/trailing quotes if present
+        if (cleaned.startsWith("\"") && cleaned.endsWith("\"")) {
+          cleaned = cleaned.slice(1, -1);
+        }
+
+        cleaned = cleaned
+          .replace(/\\n/g, "\n")                    // literal \n → newlines
+          .split("\n")
+          .map(line => line.trimStart())           // strip indentation
+          .join("\n");
+
+        setNoteContent(cleaned);
+      })
       .catch((err) => {
         console.error("❌ Failed to load markdown content:", err);
         setNoteContent("❌ Failed to load markdown");
@@ -67,7 +84,8 @@ const [noteContent, setNoteContent] = useState(type === "markdown" ? "Loading...
 
   const renderContent = () => {
     if (type === "markdown") {
-      return <pre style={{ whiteSpace: "pre-wrap" }}>{noteContent}</pre>;
+      // return <pre style={{ whiteSpace: "pre-wrap" }}>{noteContent}</pre>;
+      return <ReactMarkdown>{noteContent}</ReactMarkdown>;
     } else if (type === "image") {
       return <img src={content} alt="Image" style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
     } else {
@@ -121,6 +139,13 @@ const [noteContent, setNoteContent] = useState(type === "markdown" ? "Loading...
         </button>
         <div style={{ width: "100%", height: "100%", overflow: "auto" }}>
           {renderContent()}
+        </div>
+        <div className="sticky-markdown">
+          <ReactMarkdown
+            children={noteContent}
+            remarkPlugins={[remarkGfm]}
+            breaks={true}>{noteContent}
+          </ReactMarkdown>
         </div>
       </div>
     </Rnd>
