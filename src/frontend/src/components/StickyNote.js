@@ -47,7 +47,7 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
     if (type === "markdown") {
       return <pre style={{ whiteSpace: "pre-wrap" }}>{content}</pre>;
     } else if (type === "image") {
-      return <img src={content} alt="Dropped" style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
+      return <img src={content} alt="Image" style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
     } else {
       return <p>Unsupported type</p>;
     }

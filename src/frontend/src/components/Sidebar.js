@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import FileTree from "./FileTree";
 import GoogleLoginButton from "./GoogleLogin";
-import logo from "./assets/logo.png";
+import logo from "./images/logo.png";
 
 export default function Sidebar({ onFileSelect }) {
   const [sessionActive, setSessionActive] = useState(false);

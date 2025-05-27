@@ -1,9 +1,16 @@
 # api_display_routes.py
 import logging
-from fastapi import APIRouter, Request, Query, File, Form, UploadFile
+import shutil
+import os
+from pathlib import Path
+from fastapi import APIRouter, Request, Query, File, Form, UploadFile, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from src.backend.datahandler_display import DisplayDataHandler
 
+
 router = APIRouter()
+router.mount("/assets", StaticFiles(directory="assets"), name="assets")
 display = DisplayDataHandler()
 
 @router.get("/api/display/sticky-notes")
@@ -109,29 +116,48 @@ def get_sticky_assets(request: Request):
 @router.post("/api/display/sticky-assets")
 async def upload_sticky_asset(
     file: UploadFile = File(...),
-    layout: str = Form(...),
-    user_space: str = Form(...),
-    campaign: str = Form(...),
-    type: str = Form(...)
+    layout: str = Form("default"),
+    user_space: str = Form("local"),
+    campaign: str = Form("ForgeSworn"),
+    type: str = Form("image")
 ):
     logging.info(f"sticky-assets Post content")
+
     try:
-        # user_space = None
-        # campaign = None
-        response = display.post_sticky_assets(
-            file,
-            user_space=user_space or None,
-            campaign=campaign or None
-        )
-        return response
+        filename = file.filename
+        ext = Path(filename).suffix.lower()
+
+        # Create folder if needed
+        asset_folder = Path("assets", user_space, campaign) # / layout
+        asset_folder.mkdir(parents=True, exist_ok=True)
+
+        asset_path = asset_folder / filename
+
+        # Save file to disk
+        with asset_path.open("wb") as f:
+            shutil.copyfileobj(file.file, f)
+
+        display.post_sticky_assets(file, type, asset_path, user_space, campaign, layout)
+        relative_path=f"./{str(asset_path)}"
+        # Return relative path for use in <img src="...">
+
+        return {"status": "✅ Uploaded", "asset_path": relative_path}
 
     except Exception as e:
-        message = f"Error: POST /api/display/sticky_assets failed."
-        logging.error(message)
-        logging.debug(f"Error: api_display_routes.post: {e} ")
-        return {"status": "error", "text": message }
+        return {"error": str(e)}
 
-    return display.post_sticky_assets(request)
+
+@router.get("/assets/{user_space}/{campaign}/{filename}")
+async def get_asset_file(user_space: str, campaign: str, filename: str):
+    """
+    Serve static asset files from assets/{user_space}/{campaign}/{filename}
+    """
+    asset_path = os.path.join("assets", user_space, campaign, filename)
+
+    if not os.path.exists(asset_path):
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    return FileResponse(asset_path)
 
 
 @router.delete("/api/display/sticky-assets")

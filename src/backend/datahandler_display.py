@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 from src.backend.datahandler import RpgDatabase
@@ -17,7 +18,7 @@ class DisplayDataHandler(RpgDatabase):
         # self.drop_table('sticky_notes')
         self.init_layout()
         self.init_sticky_notes()
-        self.init_add_sticky_assets()
+        # self.init_add_sticky_assets()
         self.init_sticky_assets()
         return
 
@@ -199,46 +200,37 @@ class DisplayDataHandler(RpgDatabase):
             )
 
 
-    def insert_sticky_asset(self, filename, path, user_space="", campaign=""):
+    def insert_sticky_asset(self, name, type, path, user_space="", campaign=""):
         command = """
-            INSERT INTO sticky_assets (filename, path, user_space, campaign)
-            VALUES (?, ?, ?, ?);
+            INSERT INTO sticky_assets (name, type, path, user_space, campaign)
+            VALUES (?, ?, ?, ?, ?);
         """
         try:
-            self.write(command, (filename, path, user_space, campaign))
+            # timestamp = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+            self.write(command, (name, type, str(path), user_space, campaign))
             return {"status": "OK", "text": "db.write successful" }
 
         except Exception as e:
-            message = f"Failed to insert sticky_asset {file_name}"
+            message = f"Failed to insert sticky_asset {name}"
             logging.debug(
-            "DisplayDataHandler.init_add_sticky_assets: to insert sticky_assets"
+            f"DisplayDataHandler.init_add_sticky_assets: to insert sticky_assets {e}"
             )
 
             logging.error(message)
             return {"status": "error", "text": message}
 
 
-    def post_sticky_assets(self, file_data, user_space=None, campaign=None):
+    def post_sticky_assets(self, file_data, type, path, user_space=None, campaign=None, layout=None):
         # self.local_store
         file_name = file_data.filename
-        logging.info("save filename to db: {file_name}")
+        logging.info(f"save filename to db: {file_name}")
 
-        file_metadata = self.local_store.write_asset_file(
-            file_data,
-            user_space,
-            campaign
-            )
-
-        if not file_metadata.get('status') == 'uploaded':
-            return {
-                "status": "error",
-                "text": "File {file_name} failed to upload"
-                }
 
         try:
             response = self.insert_sticky_asset(
-                file_metadata.filename,
-                file_metadata.path,
+                file_name,
+                type,
+                path,
                 user_space,
                 campaign,
             )
