@@ -178,10 +178,13 @@ async def get_asset_file(user_space: str, campaign: str, filename: str):
 
     safe_root = Path("assets").resolve()
     asset_path = safe_root / user_space / campaign / filename
-    asset_path = asset_path.resolve()
 
-    # Validate that the resolved path is within the safe root directory
-    if not safe_root in asset_path.parents:
+    # Normalize and validate that the resolved path is within the safe root directory
+    try:
+        asset_path = asset_path.resolve(strict=False)
+        if not safe_root in asset_path.parents or safe_root != asset_path.anchor:
+            raise ValueError("Invalid path")
+    except Exception:
         raise HTTPException(status_code=400, detail="Invalid path")
 
     if ext in [".md", ".txt"]:
