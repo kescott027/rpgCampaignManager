@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from fastapi import APIRouter, Request, Query, File, Form, UploadFile, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from src.backend.datahandler_display import DisplayDataHandler
 
 
@@ -14,27 +14,31 @@ router.mount("/assets", StaticFiles(directory="assets"), name="assets")
 display = DisplayDataHandler()
 
 @router.get("/api/display/sticky-notes")
-def get_sticky_notes():
+def get_sticky_notes(
+    name: str = Query(...),
+    user_space: str = Query(...),
+    campaign: str = Query(...)
+):
     """
     Return all saved sticky notes for the display window.
     """
-    return {"notes": display.fetch_sticky_notes()}
+    notes = display.load_layout
+    return {"notes": display.fetch_sticky_notes(name, user_space, campaign)}
 
 
 @router.post("/api/display/sticky-notes")
-async def update_sticky_notes(request: Request):
-    """
-    Replace saved sticky notes with new layout and content.
-    """
-    try:
-        data = await request.json()
-        notes = data.get("notes", [])
-        # name = data.get("name", "default")
-        # display.save_layout(name, notes)
-        display.update_sticky_notes(name, notes)
-        return {"status": " Sticky notes updated", "count": len(notes)}
-    except Exception as e:
-        return {"error": str(e)}
+async def save_sticky_notes(payload: dict):
+
+    name = payload.get('name')
+    notes = payload.get('notes', [])
+    user_space = payload.get('user_space', 'local')
+    campaign = payload.get('campaign', 'sandbox')
+
+    layout_id = display.get_or_create_layout_id(name, user_space, campaign)
+
+    display.update_layout(layout_id, notes)
+
+    return {"status": "success", "layout": name, "count": len(notes)}
 
 
 @router.post("/api/display/layout")
@@ -45,7 +49,7 @@ async def post_sticky_layout(request: Request):
         notes = data.get("notes", [])
         name = data.get("name", "default")
         display.save_layout(name, notes)
-        # display.update_sticky_notes(name, notes)
+
         return {"status": " Sticky notes updated", "count": len(notes)}
 
     except Exception as e:
@@ -53,38 +57,47 @@ async def post_sticky_layout(request: Request):
 
 
 @router.get("/api/display/layout")
-async def get_sticky_layout(name: str = Query(...)):
+def get_sticky_layout(
+    name: str = Query(...),
+    user_space: str = Query(...),
+    campaign: str = Query(...)
+):
     logging.info(f"request get a sticky layout")
-    data = await request.json()
+    result = display.load_layout(name, user_space, campaign)
 
-    return display.load_layout(name)
+    return result
 
 
 @router.delete("/api/display/layout")
-async def delete_sticky_layout(name: str = Query(...)):
-    logging.info(f"request to delete all sticky layouts")
+async def delete_sticky_layout(
+    name: str = Query(...),
+    user_space: str = Query(...),
+    campaign: str = Query(...)
+):
+    logging.info(f"request to delete  sticky layout {name}-{user_space}-{campaign}")
     try:
-        data = await request.json()
 
-        display.delete_layout(name)
-        return {"status": f"Layout '{name}' deleted."}
+        display.delete_layout(name, user_space, campaign)
+        return {"status": f"Layout '{name}-{user_space}-{campaign}' deleted."}
     except Exception as e:
         return {"error": str(e)}
 
 
-@router.put("/api/display/layout")
+@router.patch("/api/display/layout")
 async def rename_sticky_layout(request: Request):
 
     try:
         data = await request.json()
         old_name = data.get("old_name")
         new_name = data.get("new_name")
+        user_space = data.get("user_space")
+        campaign = data.get("campaign")
 
         if not old_name or not new_name:
             return {"error": "Both old_name and new_name are required."}
 
-        display.rename_layout(old_name, new_name)
-        return {"status": f"Renamed layout '{old_name}' to '{new_name}'."}
+        display.rename_layout(old_name, new_name, user_space, campaign)
+        return {"status": f"Renamed layout '{old_name}-{user_space}-{campaign}' to '{new_name}-{user_space}-{campaign}'."}
 
     except Exception as e:
         return {"error": str(e)}

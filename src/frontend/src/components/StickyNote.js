@@ -1,78 +1,37 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Rnd } from "react-rnd";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { loadStickyNotes, saveStickyNotes } from "../utils/stickyNoteSync";
 
-
-export default function StickyNote({ id, content, type, initialPos, initialSize, onClose, onUpdate }) {
-  const [position, setPosition] = useState(initialPos || { x: 100, y: 100 });
-  const [dragOffset, setDragOffset] = useState(null);
-  const [size, setSize] = useState(initialSize || { width: 240, height: 180 });
-
+export default function StickyNote({ id, content, type, position, size, onClose, onUpdate }) {
   const [noteContent, setNoteContent] = useState(type === "markdown" ? "Loading..." : content);
-  const handleMouseDown = (e) => {
-    setDragOffset({
-      x: e.clientX - position.left,
-      y: e.clientY - position.top
-    });
-  };
-
-  const handleMouseMove = (e) => {
-    if (!dragOffset) return;
-    setPosition({
-      top: e.clientY - dragOffset.y,
-      left: e.clientX - dragOffset.x
-    });
-  };
-
-  const handleDragStop = (e, d) => {
-    setPosition({ x: d.x, y: d.y });
-    onUpdate && onUpdate(id, { position: { x: d.x, y: d.y }, size });
-  };
-
-  const handleMouseUp = () => {
-    setDragOffset(null);
-    // saveStickyNotes(StickyNote);
-  };
-
-  const handleResizeStop = (e, direction, ref, delta, position) => {
-    const newSize = { width: ref.offsetWidth, height: ref.offsetHeight };
-    setSize(newSize);
-    setPosition(position);
-    onUpdate && onUpdate(id, { position: position, size: newSize });
-    // saveStickyNotes(StickyNote);
-  };
-
+  /**  const [currentPos, setCurrentPos] = useState(position || { x: 100, y: 100 });
+   const [currentSize, setCurrentSize] = useState(size || { width: 240, height: 180 });
+   const effectivePosition = position ?? { x: 100, y: 100 };
+   const effectiveSize = size ?? { width: 240, height: 180 };
+   // Sync if props change
+   useEffect(() => {
+    if (position) setCurrentPos(position);
+    if (size) setCurrentSize(size);
+  }, [position, size]);
+   **/
   useEffect(() => {
     if (type !== "markdown") return;
-    if (typeof content !== "string" || !content.includes(".")) {
-      console.warn("⛔ Invalid markdown content path:", content);
-      return;
-    }
+    if (typeof content !== "string" || !content.includes(".")) return;
 
     const normalizedPath = content.startsWith("/") ? content : `/${content}`;
-    console.log("📄 Fetching markdown from:", normalizedPath);
-
     fetch(normalizedPath)
-      .then((res) => {
-        if (!res.ok) throw new Error("Bad response");
-        return res.text();
-      })
-      .then((text) => {
+      .then(res => res.ok ? res.text() : Promise.reject())
+      .then(text => {
         let cleaned = text.trim();
-
-        // Remove leading/trailing quotes if present
         if (cleaned.startsWith("\"") && cleaned.endsWith("\"")) {
           cleaned = cleaned.slice(1, -1);
         }
-
         cleaned = cleaned
-          .replace(/\\n/g, "\n")                    // literal \n → newlines
+          .replace(/\\n/g, "\n")
           .split("\n")
-          .map(line => line.trimStart())           // strip indentation
+          .map(line => line.trimStart())
           .join("\n");
-
         setNoteContent(cleaned);
       })
       .catch((err) => {
@@ -81,41 +40,54 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
       });
   }, [type, content]);
 
-
   const renderContent = () => {
     if (type === "markdown") {
-      // return <pre style={{ whiteSpace: "pre-wrap" }}>{noteContent}</pre>;
-      return <ReactMarkdown>{noteContent}</ReactMarkdown>;
+      return <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent}</ReactMarkdown>;
     } else if (type === "image") {
       return <img src={content} alt="Image" style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
+    } else if (type === "pdf") {
+      return <embed src={content} type="application/pdf" width="100%" height="100%" />;
     } else {
       return <p>Unsupported type</p>;
     }
   };
-
-  // saveStickyNotes(StickyNote);
+  console.log("📌 Rendering StickyNote", id, position, size);
+  console.log("📐 Note", id, "→ Pos:", position, "Size:", size);
+  const fallbackPosition = position ?? { x: 100, y: 100 };
+  const fallbackSize = size ?? { width: 240, height: 180 };
 
   return (
     <Rnd
-      default={{
-        x: position.x,
-        y: position.y,
-        width: size.width,
-        height: size.height
+      position={fallbackPosition}
+      size={fallbackSize}
+      onDragStop={(e, d) => {
+        onUpdate?.(id, {
+          position: { x: d.x, y: d.y },
+          size: fallbackSize  // keep size unchanged on drag
+        });
+      }}
+      onResizeStop={(e, direction, ref, delta, newPos) => {
+        const newSize = {
+          width: ref.offsetWidth,
+          height: ref.offsetHeight
+        };
+        onUpdate?.(id, {
+          position: newPos,
+          size: newSize
+        });
       }}
       minWidth={40}
       minHeight={40}
       bounds="parent"
-      style={{ zIndex: 10, background: "#fff9c4", border: "1px solid #ccc", boxShadow: "2px 2px 6px rgba(0,0,0,0.1)" }}
-      onDragStop={handleDragStop}
-      onResizeStop={handleResizeStop}
       style={{
+        position: "absolute",
         zIndex: 20,
         background: "#ffffcc",
         border: "1px solid #ccc",
         boxShadow: "2px 2px 4px rgba(0,0,0,0.2)",
         padding: "4px",
-        overflow: "hidden"
+        overflow: "hidden",
+        pointerEvents: "auto"
       }}
     >
       <div style={{ width: "100%", height: "100%", padding: "5px", position: "relative" }}>
@@ -138,14 +110,9 @@ export default function StickyNote({ id, content, type, initialPos, initialSize,
           ✕
         </button>
         <div style={{ width: "100%", height: "100%", overflow: "auto" }}>
-          {renderContent()}
-        </div>
-        <div className="sticky-markdown">
-          <ReactMarkdown
-            children={noteContent}
-            remarkPlugins={[remarkGfm]}
-            breaks={true}>{noteContent}
-          </ReactMarkdown>
+          {type === "markdown"
+            ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent}</ReactMarkdown>
+            : <img src={content} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
         </div>
       </div>
     </Rnd>

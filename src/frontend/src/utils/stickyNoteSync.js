@@ -40,9 +40,9 @@ export async function handleRenameLayout(oldName, newName) {
   }
 }
 
-export async function handleDeleteLayout(name) {
+export async function handleDeleteLayout(name, user_space, campaign) {
   try {
-    const res = await fetch(`/api/display/sticky-notes/delete-layout?name=${encodeURIComponent(name)}`, {
+    const res = await fetch(`/api/display/layout?name=${encodeURIComponent(name)}&user_space=${encodeURIComponent(user_space)}&campaign=${encodeURIComponent(campaign)}`, {
       method: "DELETE"
     });
     const result = await res.json();

@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+from fastapi.responses import JSONResponse
 from src.backend.datahandler import RpgDatabase
 from src.backend.controller_configuration import Configuration
 from src.backend.controller_localstore import LocalFileHandler
@@ -57,8 +58,10 @@ class DisplayDataHandler(RpgDatabase):
         CREATE TABLE IF NOT EXISTS sticky_layouts (
             layout_id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            notes TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            notes TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            user_space TEXT NOT NULL,
+            campaign TEXT NOT NULL
         );
         """
         self.write(command)
@@ -90,30 +93,45 @@ class DisplayDataHandler(RpgDatabase):
         return True
 
 
-    def save_layout(self, layout_name, layout_data):
+    def update_layout(self, layout_id, layout_data):
         """Save a sticky note layout to the database."""
         # layout_id = get_or_create_layout_id(layout_name)
         json_data = json.dumps(layout_data)
         command = """
-        INSERT INTO sticky_layouts (name, content)
-        VALUES (?, ?);
+        UPDATE sticky_layouts
+        SET notes = ?
+        WHERE layout_id = ?;
         """
-        self.write(command, (layout_name, json_data))
+        self.write(command, (json_data, layout_id))
 
 
-    def load_layout(self, name):
+    def load_layout(self, name, user_space, campaign):
         """Load the most recent layout with a given name."""
-        logging.info(f"loading layout name: {name}")
-        command = """
-        SELECT content FROM sticky_layouts
-        WHERE name = ?
-        ORDER BY timestamp DESC
-        LIMIT 1;
-        """
-        results = self.read(command, (name,))
-        if results and len(results) > 0:
-            return json.loads(results[0][0])
-        return []
+        logging.info(f"loading layout name: {name}-{user_space}-{campaign}")
+        layout_id = self.get_layout_id(name, user_space, campaign)
+
+        if layout_id is None:
+            return JSONResponse(status_code=404, content={"notes": []})
+
+        try:
+            result = self.read(
+                f"SELECT notes FROM sticky_layouts WHERE layout_id = {layout_id}",
+            )
+
+            if not result or not result[0][0]:
+                logging.warning(f"No notes found for layout ID {layout_id}")
+                return JSONResponse(status_code=200, content={"notes": []})
+
+            raw_notes = result[0][0]
+            parsed_notes = json.loads(raw_notes)
+
+            logging.info(f"returning stickynotes: {result[0][0]}")
+            return JSONResponse(status_code=200, content={'notes': parsed_notes})
+
+        except Exception as e:
+            logging.error(f"❌ Failed to load sticky note layout: {e}")
+            return JSONResponse(status_code=500, content={"error": "Internal server error."})
+
 
 
     def fetch_layout_names(self):
@@ -124,25 +142,80 @@ class DisplayDataHandler(RpgDatabase):
         return [r[0] for r in results if r[0]]
 
 
-    def delete_layout(self, name):
-        logging.info("request to delte {name} from sticky_layouts")
-        """Delete all layouts with the specified name."""
-        command = "DELETE FROM sticky_layouts WHERE name = ?;"
-        self.write(command, (name,))
+    def delete_layout(self, name, user_space, campaign):
+        logging.info(f"request to delete {name}-{user_space}-{campaign} from sticky_layouts")
+        layout_id = self.get_layout_id(name, user_space, campaign)
+        if layout_id is None:
+            logging.warning(f"No layout found for {name}-{user_space}-{campaign}")
+            return
+
+        command = "DELETE FROM sticky_layouts WHERE layout_id = ?;"
+        self.write(command, (layout_id,))
+        logging.info(f"Layout {name}-{user_space}-{campaign} (ID {layout_id}) deleted")
+        return
 
 
-    def rename_layout(self, old_name, new_name):
-        """Rename all layouts from old_name to new_name."""
-        command = "UPDATE sticky_layouts SET name = ? WHERE name = ?;"
-        self.write(command, (new_name, old_name))
+    def rename_layout(self, old_name, new_name, user_space, campaign):
+        """Rename layout from old_name to new_name."""
 
-    def get_layout_id(self, layout_name):
-        query = f"SELECT id FROM sticky_layouts WHERE name = {layout_name};"
+        command = """UPDATE sticky_layouts SET name = ?
+        WHERE name = ? AND user_space = ? AND campaign = ?;
+        """
+        self.write(command, (new_name, old_name, user_space, campaign))
+        return
 
 
-    def fetch_sticky_notes(self, layout_name="default"):
-        layout_id = self.get_layout_id(layout_name)
-        query = f"SELECT id, type, content, position, size FROM sticky_notes WHERE layout_id = {layout_name};"
+    def get_layout_id(self, name, user_space, campaign):
+        """
+        suggested query:
+
+        query = \"\"\"
+        SELECT layout_id FROM sticky_layouts
+        WHERE name = ? AND user_space = ? AND campaign = ?;
+        \"\"\"
+
+        result = self.read(query, (name, user_space, campaign))
+        """
+
+        query = f"""
+            SELECT layout_id FROM sticky_layouts
+            WHERE name = '{name}' AND user_space = '{user_space}' AND campaign = '{campaign}';
+        """
+        result = self.read(query)
+
+        if result:
+            logging.info(f"load layout returned: {result[0][0]}")
+            return result[0][0]
+
+        return None
+
+
+    def fetch_sticky_note(self, note_id):
+
+        query = f"SELECT type, content, x, y, width, height FROM sticky_notes WHERE id = {note_id};"
+
+        try:
+            rows = self.read(query)
+            if type(rows) == 'string':
+                return rows
+
+            return {
+                "id": row[0],
+                "type": row[1],
+                "content": row[2],
+                "position": json.loads(row[3]) if row[3] else {},
+                "width": row[5],
+                "height": row[6],
+                }
+        # except JSONDecodeError as error:
+        #     return {"Read Error: could not read response "}
+        except Exception as e:
+            return {"Read Error: could not read response "}
+
+
+    def fetch_sticky_notes(self, id, user_space, campaign):
+        # layout_id = self.get_layout_id(layout_name)
+        query = f"SELECT id, type, content, position, size FROM sticky_notes WHERE layout_id = {layout_id};"
         # x, y, width, height FROM sticky_notes;"
         try:
             rows = self.read(query)
@@ -165,16 +238,21 @@ class DisplayDataHandler(RpgDatabase):
         except Exception as e:
             return {"Read Error: could not read response "}
 
-    def get_or_create_layout_id(self, name):
-        query = "SELECT id FROM sticky_layouts WHERE name = ?"
-        result = self.read(query, (name,))
-        if result:
-            return result[0][0]
 
-        insert = "INSERT INTO sticky_layouts (name) VALUES (?)"
-        self.write(insert, (name,))
-        result = self.read(query, (name,))
-        return result[0][0]
+    def get_or_create_layout_id(self, name, user_space, campaign):
+
+        layout_id = self.get_layout_id(name, user_space, campaign)
+        if layout_id:
+            logging.info(f"get layout id returned: {layout_id}")
+            return layout_id
+
+        insert = """
+            INSERT INTO sticky_layouts (name, user_space, campaign)
+            VALUES (?, ?, ?)
+        """
+        self.write(insert, (name, user_space, campaign))
+        return self.get_layout_id(name, user_space, campaign)
+
 
 
     def update_sticky_notes(self, name, notes):

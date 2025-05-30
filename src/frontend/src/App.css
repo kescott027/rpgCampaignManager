@@ -52,6 +52,7 @@ body, html, .app-container {
 .display-window {
   background: #f4f4f4;
   padding: 10px;
+  position: relative;
   overflow-y: auto;
 }
 

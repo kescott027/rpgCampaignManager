@@ -5,6 +5,7 @@ import DriveListing from "./DriveListing";
 import InitiativePanel from "./InitiativePanel";
 import CharacterPanel from "./CharacterPanel";
 import StickyNote from "./StickyNote";
+import { debounce } from "../utils/debounce";
 import { loadStickyNotes, saveStickyNotes, handleRenameLayout, handleDeleteLayout } from "../utils/stickyNoteSync";
 import ManageLayoutsPanel from "./ManageLayoutsPanel";
 
@@ -23,23 +24,39 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   const [layoutNames, setLayoutNames] = useState([]);
   const [selectedLayout, setSelectedLayout] = useState("");
 
-  const USER_SPACE = "local";
-  const CAMPAIGN = "sandbox";
+  const debouncedSaveStickyNotes = debounce((layoutName, notes) => {
+    saveStickyNotes(layoutName, notes);
+  }, 300);
+
+  const user_space = "local";
+  const campaign = "sandbox";
+
+  const fetchLayouts = async () => {
+    try {
+      const res = await fetch("/api/display/layout/list");
+      const data = await res.json();
+      setLayoutNames(data.layouts || []);
+    } catch (err) {
+      console.error("❌ Failed to fetch layout names:", err);
+    }
+  };
+
 
   useEffect(() => {
-    fetch("/api/display/layout/list")
-      .then(res => res.json())
-      .then(data => setLayoutNames(data.layouts || []))
-      .catch(err => console.error("Failed to load layout names:", err));
+    fetchLayouts();
   }, []);
 
-  // Load sticky notes from backend
-  useEffect(() => {
+  /**
+   useEffect(() => {
     fetch("/api/display/sticky-notes")
       .then(res => res.json())
-      .then(data => setStickyNotes(data.notes || []))
+      .then(data => {
+        const normalizedNotes = (data.notes);
+        setStickyNotes(normalizedNotes);
+      })
       .catch(err => console.error("Failed to load sticky notes:", err));
   }, []);
+   **/
 
   const handleSaveLayout = async () => {
     const name = prompt("Enter a name for this layout:");
@@ -50,7 +67,12 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
       const res = await fetch("/api/display/sticky-notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          name: name,
+          notes: stickyNotes,
+          user_space: user_space,
+          camppaign: campaign
+        })
       });
 
 
@@ -72,10 +94,14 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
     if (!name) return;
 
     try {
-      const res = await fetch(`/api/display/sticky-notes/layout?name=${encodeURIComponent(name)}`);
+      const res = await fetch(`/api/display/layout?name=${encodeURIComponent(name)}&user_space=${encodeURIComponent(user_space)}&campaign=${encodeURIComponent(campaign)}`);
       const data = await res.json();
+
       if (Array.isArray(data.notes)) {
-        setStickyNotes(data.notes);
+        setStickyNotes(data.notes.map(note => ({
+          ...note,
+          size: note.size ?? { width: 240, height: 180 }
+        })));
         setCurrentLayout(name);  // ✅ Store loaded layout for future saves
         console.log("✅ Layout loaded");
       } else {
@@ -115,16 +141,16 @@ const handleDrop = async (e) => {
       const type = file.type;
 
       const formData = new FormData();
-        formData.append("file", file);
+      formData.append("file", file);
 
-        formData.append("layout", currentLayout || "default");
-        formData.append("user_space", USER_SPACE || "local");
-        formData.append("campaign", CAMPAIGN || "sandbox");
-        formData.append("type", file.type);
-        const uploadRes = await fetch("/api/display/sticky-assets", {
-          method: "POST",
-          body: formData
-        });
+      formData.append("layout", currentLayout || "default");
+      formData.append("user_space", user_space || "local");
+      formData.append("campaign", campaign || "sandbox");
+      formData.append("type", file.type);
+      const uploadRes = await fetch("/api/display/sticky-assets", {
+        method: "POST",
+        body: formData
+      });
 
       const uploadData = await uploadRes.json();
       const assetPath = uploadData.asset_path;
@@ -139,11 +165,12 @@ const handleDrop = async (e) => {
           type: type.startsWith("image") ? "image" : "markdown",
           content: assetPath,
           position: {
-            top: e.clientY - 50,
-            left: e.clientX - 50
+            x: e.clientX - 50,
+            y: e.clientY - 50
           },
           size: { width: 240, height: 180 }
         };
+        console.log("🧷 New sticky note data:", note);
         setStickyNotes(prev => {
           const updated = [...prev, note];
           saveStickyNotes(currentLayout, updated);
@@ -195,7 +222,7 @@ const handleDrop = async (e) => {
   const showFile = filePath?.type === "drive-file";
 
   return (
-    <div className="display-window" style={{ display: "flex", position: "relative" }}
+    <div className="display-window" style={{ display: "flex", position: "relative", overflow: "visible" }}
          onDrop={handleDrop}
          onDragOver={handleDragOver}
     >
@@ -231,16 +258,16 @@ const handleDrop = async (e) => {
           <select
             value={selectedLayout}
             onChange={async (e) => {
-              const name = e.target.value;
-              setSelectedLayout(name);
-              if (name) {
+              const layout_name = e.target.value;
+              setSelectedLayout(layout_name);
+              if (layout_name) {
                 try {
-                  const res = await fetch(`/api/display/sticky-notes?name=${encodeURIComponent(name)}`);
+                  const res = await fetch(`/api/display/layout?name=${encodeURIComponent(layout_name)}&user_space=${encodeURIComponent(user_space)}&campaign=${encodeURIComponent(campaign)}`);
                   const data = await res.json();
                   if (Array.isArray(data.notes)) {
                     setStickyNotes(data.notes);
-                    setCurrentLayout(name);
-                    console.log("✅ Layout loaded:", name);
+                    setCurrentLayout(layout_name);
+                    console.log("✅ Layout loaded:", layout_name);
                   }
                 } catch (err) {
                   console.error("❌ Failed to load layout:", err);
@@ -260,22 +287,39 @@ const handleDrop = async (e) => {
         </div>
 
       </div>
-      {stickyNotes.map(note => (
-        <StickyNote
-          key={note.id}
-          id={note.id}
-          type={note.type}
-          content={note.content}
-          position={note.position}
-          size={note.size}
-          onClose={(id) => setStickyNotes(notes => notes.filter(n => n.id !== id))}
-        />
-      ))}
+      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+        {Array.isArray(stickyNotes) && stickyNotes.map(note => (
+          <StickyNote
+            key={note.id}
+            id={note.id}
+            type={note.type}
+            content={note.content}
+            position={note.position}
+            size={note.size}
+            onClose={(id) =>
+              setStickyNotes(notes => notes.filter(n => n.id !== id))
+            }
+            onUpdate={(id, updates) => {
+              setStickyNotes(prev => {
+                const updated = prev.map(note =>
+                  note.id === id ? { ...note, ...updates } : note
+                );
+                debouncedSaveStickyNotes(currentLayout, updated);
+                return updated;
+              });
+            }}
+          />
+        ))}
+      </div>
+
       {showLayoutManager && (
         <ManageLayoutsPanel
           onClose={() => setShowLayoutManager(false)}
           onRename={handleRenameLayout}
           onDelete={handleDeleteLayout}
+          user_space={user_space}
+          campaign={campaign}
+          fetchLayouts={fetchLayouts}
         />
       )}
     </div>
