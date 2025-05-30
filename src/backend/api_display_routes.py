@@ -146,8 +146,8 @@ async def upload_sticky_asset(
         asset_folder = safe_root / user_space / campaign
         asset_folder = asset_folder.resolve()
 
-        # Validate that the resolved path is within the safe root directory
-        if not str(asset_folder).startswith(str(safe_root)):
+        # Normalize and validate that the resolved path is within the safe root directory
+        if not safe_root in asset_folder.parents:
             raise HTTPException(status_code=400, detail="Invalid path")
 
         asset_folder.mkdir(parents=True, exist_ok=True)
@@ -176,22 +176,20 @@ async def get_asset_file(user_space: str, campaign: str, filename: str):
     ext = Path(filename).suffix.lower()
     logging.info(f"returning file type: {ext}")
 
-    asset_path = os.path.join("assets", user_space, campaign, filename)
+    safe_root = Path("assets").resolve()
+    asset_path = safe_root / user_space / campaign / filename
+    asset_path = asset_path.resolve()
+
+    # Validate that the resolved path is within the safe root directory
+    if not safe_root in asset_path.parents:
+        raise HTTPException(status_code=400, detail="Invalid path")
 
     if ext in [".md", ".txt"]:
-            with Path(asset_path).open("r", encoding="utf-8") as f:
-                content = f.read()
-            # return {
-            #    "status": "✅ Uploaded",
-            #    "type": "markdown",
-            #    "content": content,
-            #    "filename": filename
-            #}
-            return content
+        with asset_path.open("r", encoding="utf-8") as f:
+            content = f.read()
+        return content
 
-    asset_path = os.path.join("assets", user_space, campaign, filename)
-
-    if not os.path.exists(asset_path):
+    if not asset_path.exists():
         raise HTTPException(status_code=404, detail="Asset not found")
 
     return FileResponse(asset_path)
