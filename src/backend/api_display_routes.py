@@ -137,11 +137,19 @@ async def upload_sticky_asset(
     logging.info(f"sticky-assets Post content")
 
     try:
-        filename = file.filename
+        from werkzeug.utils import secure_filename
+        filename = secure_filename(file.filename)
         ext = Path(filename).suffix.lower()
 
         # Create folder if needed
-        asset_folder = Path("assets", user_space, campaign) # / layout
+        safe_root = Path("assets").resolve()
+        asset_folder = safe_root / user_space / campaign
+        asset_folder = asset_folder.resolve()
+
+        # Validate that the resolved path is within the safe root directory
+        if not str(asset_folder).startswith(str(safe_root)):
+            raise HTTPException(status_code=400, detail="Invalid path")
+
         asset_folder.mkdir(parents=True, exist_ok=True)
 
         asset_path = asset_folder / filename
