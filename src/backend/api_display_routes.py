@@ -144,10 +144,13 @@ async def upload_sticky_asset(
         # Create folder if needed
         safe_root = Path("assets").resolve()
         asset_folder = safe_root / user_space / campaign
-        asset_folder = asset_folder.resolve()
 
         # Normalize and validate that the resolved path is within the safe root directory
-        if not safe_root in asset_folder.parents:
+        try:
+            asset_folder = asset_folder.resolve(strict=True)
+            if not asset_folder.is_relative_to(safe_root):
+                raise ValueError("Path traversal detected")
+        except Exception:
             raise HTTPException(status_code=400, detail="Invalid path")
 
         asset_folder.mkdir(parents=True, exist_ok=True)
