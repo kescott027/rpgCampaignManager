@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from src.backend.datahandler_display import DisplayDataHandler
+from src.backend.utility_security import sanitize_input
 
 
 router = APIRouter()
@@ -30,8 +31,16 @@ def get_sticky_notes(
     """
     Return all saved sticky notes for the display window.
     """
+
+    safe_name = sanitize_input(name)
+    safe_space = sanitize_input(user)
+    safe_campaign = sanitize_input(campaign)
     notes = display.load_layout
-    return {"notes": display.fetch_sticky_notes(name, user_space, campaign)}
+    return {"notes": display.fetch_sticky_notes(
+        safe_name,
+        safe_space,
+        safe_campaign
+        )}
 
 
 @router.post("/api/display/sticky-notes")
@@ -132,8 +141,8 @@ def get_sticky_assets(request: Request):
 
     try:
         assets = display.fetch_sticky_assets(
-            user_space=user_space or None,
-            campaign=campaign or None
+            user_space=sanitize_input(user_space) or 'local',
+            campaign=sanitize_input(campaign) or None
         )
         return {"assets": assets}
 
@@ -153,7 +162,7 @@ async def upload_sticky_asset(
     type: str = Form("image")
 ):
     logging.info(f"sticky-assets Post content")
-
+    layout = sanitize_input(layout)
     try:
         from werkzeug.utils import secure_filename
         filename = secure_filename(file.filename)
@@ -173,13 +182,13 @@ async def upload_sticky_asset(
 
         asset_folder.mkdir(parents=True, exist_ok=True)
 
-        asset_path = asset_folder / filename
+        asset_path = sanitize_input(asset_folder) / sanitize_input(filename)
 
         # Save file to disk
         with asset_path.open("wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        display.post_sticky_assets(file, type, asset_path, user_space, campaign, layout)
+        display.post_sticky_assets(file, type, asset_path, safe_space, safe_campaign, layout)
         relative_path=f"./{str(asset_path)}"
         # Return relative path for use in <img src="...">
 

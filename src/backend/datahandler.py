@@ -5,7 +5,7 @@ import logging
 import os
 from pathlib import Path
 from src.backend.controller_configuration import Configuration
-
+from src.backend.utility_security import sanitize_input
 
 logging.basicConfig(level=logging.DEBUG)
 DB_PATH = Path("cm_datastore.db")
