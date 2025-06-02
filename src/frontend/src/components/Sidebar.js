@@ -19,10 +19,9 @@ export default function Sidebar({ onFileSelect }) {
         credentials: "include"
       });
 
-      if (res.ok && Array.isArray(data)) {
-        // Some backends return a raw array, not an object with `.items`
+      if (data.ok && Array.isArray(data)) {
         onFileSelect({ type: "drive-listing", payload: data });
-      } else if (res.ok && Array.isArray(data.items)) {
+      } else if (data.ok && Array.isArray(data.items)) {
         onFileSelect({ type: "drive-listing", payload: data.items });
       } else {
         console.error("❌ Unexpected response from /api/drive/list:", data);
