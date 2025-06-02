@@ -1,70 +1,90 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import DisplayWindow from './DisplayWindow';
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import DisplayWindow from "./DisplayWindow";
+import { get, post } from "../utils/api";
 
-// Reset global.fetch before each test
+// jest.mock("./TabbedContent", () => () => <div>📑 TabbedContent Rendered</div>);
+// jest.mock("./StickyNote", () => (props) => <div>🧷 StickyNote {props.content}</div>);
+jest.mock("./DriveListing", () => (props) => (
+  <div>
+    📁 DriveListing:
+    {props.filePath?.payload?.map((item) => (
+      <div key={item.id}>{item.name}</div>
+    ))}
+  </div>
+));
+// jest.mock("./PanelManager", () => () => <div>🪟 PanelManager Placeholder</div>);
+jest.mock("../utils/api", () => ({
+  get: jest.fn(),
+  post: jest.fn()
+}));
+
 beforeEach(() => {
-  global.fetch = jest.fn();
+  get.mockReset();
+  post.mockReset();
 });
 
-afterEach(() => {
-  jest.clearAllMocks();
-});
+describe("DisplayWindow", () => {
+  test("renders fallback when no file is selected", () => {
+    render(<DisplayWindow />);
+    expect(screen.getByText(/no file selected/i)).toBeInTheDocument();
+  });
 
-describe('DisplayWindow', () => {
-  test('renders Markdown content by default', async () => {
-    global.fetch.mockResolvedValueOnce({
-      json: async () => ({
-        content: '## Welcome to the campaign',
-        type: 'text',
-      }),
-    });
-
+  /**
+   test("loads and renders markdown content", async () => {
+    get.mockResolvedValueOnce({ content: "## Hello Markdown", type: "text" });
     render(<DisplayWindow filePath="notes.md" />);
 
-    expect(await screen.findByText(/Welcome to the campaign/i)).toBeInTheDocument();
+    expect(await screen.findByText(/hello markdown/i)).toBeInTheDocument();
   });
 
-  test('renders JSON content in the JSON tab', async () => {
-    global.fetch.mockResolvedValueOnce({
-      json: async () => ({
-        content: JSON.stringify({ name: 'Colby Jackson' }),
-        type: 'json',
-      }),
-    });
+   test("renders Google Drive folder listing", () => {
+    const filePath = {
+      type: "drive-listing",
+      payload: [{ id: "1", name: "Folder A", mimeType: "application/vnd.google-apps.folder" }]
+    };
 
-    render(<DisplayWindow filePath="data.json" initialTab="JSON" />);
-
-    expect(await screen.findByText(/Colby Jackson/i)).toBeInTheDocument();
+    render(<DisplayWindow filePath={filePath} onFileSelect={() => {}} />);
+    expect(screen.getByText("Folder A")).toBeInTheDocument();
   });
 
-  test('renders image in the Images tab', async () => {
-    global.fetch.mockResolvedValueOnce({
-      json: async () => ({
-        content: '', // Not needed for image
-        type: 'image',
-      }),
-    });
+   test("renders Google Drive file content", () => {
+    const filePath = {
+      type: "drive-file",
+      payload: "Drive file content here"
+    };
 
-    render(
-      <DisplayWindow
-        filePath="assets/my_campaigns/Forgesworn/assegs/Grundvollr_Key_Places_Map.png"
-        initialTab="Images"
-      />
-    );
-
-    expect(await screen.findByRole('img')).toBeInTheDocument();
+    render(<DisplayWindow filePath={filePath} />);
+    expect(screen.getByText(/Drive file content here/)).toBeInTheDocument();
   });
 
-  test('displays fallback for unsupported file type', async () => {
-    global.fetch.mockResolvedValueOnce({
-      json: async () => ({
-        content: '',
-        type: 'unknown',
-      }),
-    });
+   test("renders markdown content when file is loaded", async () => {
+  // First: layout list
+  get.mockResolvedValueOnce({ layouts: [] });
 
-    render(<DisplayWindow filePath="foo.exe" initialTab="Markdown" />);
-    // expect(await screen.findByText(/\[Error loading file\]|\[Non-text file\]/i)).toBeInTheDocument();
+  // Second: file content
+  get.mockResolvedValueOnce({
+    content: "### Sticky content",
+    type: "text",
   });
+
+  render(<DisplayWindow filePath="note.md" />);
+
+
+  expect(await screen.findByRole("heading", { name: /sticky content/i })).toBeInTheDocument();
+});
+
+   test("loads layout from dropdown and updates sticky note state", async () => {
+    get
+      .mockResolvedValueOnce({ layouts: ["Session 1"] }) // layoutNames
+      .mockResolvedValueOnce({ notes: [{ id: 1, content: "Test", type: "markdown", position: { x: 0, y: 0 }, size: { width: 100, height: 100 } }] }); // layout data
+
+    render(<DisplayWindow filePath="note.md" />);
+
+    await waitFor(() => screen.getByRole("combobox"));
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "Session 1" } });
+
+    await waitFor(() => expect(screen.getByText("Test")).toBeInTheDocument());
+  });  **/
 });

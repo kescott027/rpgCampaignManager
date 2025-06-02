@@ -16,11 +16,13 @@ class DisplayDataHandler(RpgDatabase):
 
     def init(self):
 
-        # self.drop_table('sticky_notes')
-        self.init_layout()
-        self.init_sticky_notes()
-        # self.init_add_sticky_assets()
-        self.init_sticky_assets()
+        table_definitions = {
+        "sticky_notes": self.init_sticky_notes,
+        "sticky_layouts": self.init_layout,
+        "sticky_assets": self.init_sticky_assets
+        }
+
+        self.init_as_needed(table_definitions)
         return
 
     def init_sticky_notes(self):

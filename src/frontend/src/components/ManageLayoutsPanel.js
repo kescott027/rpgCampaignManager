@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import SidePanel from "./SidePanel";
+import { deleteRequest, get, patch } from "../utils/api";
+
 
 export default function ManageLayoutsPanel({ onClose, onHide, onTabView, user_space, campaign, fetchLayouts }) {
   const [layouts, setLayouts] = useState([]);
@@ -13,8 +15,7 @@ export default function ManageLayoutsPanel({ onClose, onHide, onTabView, user_sp
 
   const loadLayouts = async () => {
     try {
-      const res = await fetch("/api/display/layout/list");
-      const data = await res.json();
+      const data = await get("/api/display/layout/list");
       setLayouts(data.layouts || []);
     } catch (err) {
       setError("❌ Failed to fetch layouts");
@@ -31,18 +32,13 @@ export default function ManageLayoutsPanel({ onClose, onHide, onTabView, user_sp
     const newName = prompt("Enter new layout name:");
     if (!newName || newName === selected) return;
     try {
-      const res = await fetch("/api/display/layout", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          old_name: selected,
-          new_name: newName,
-          user_space,
-          campaign
-        })
+      const result = await patch("/api/display/layout", {
+        old_name: selected,
+        new_name: newName,
+        user_space,
+        campaign
       });
 
-      const result = await res.json();
       if (result.error) {
         console.error("❌ Rename failed:", result.error);
         setError(result.error);
@@ -62,17 +58,22 @@ export default function ManageLayoutsPanel({ onClose, onHide, onTabView, user_sp
     if (!selected) return;
     const confirmDelete = window.confirm(`Delete layout "${selected}"?`);
     if (!confirmDelete) return;
+
     try {
-      await fetch(`/api/display/layout?name=${encodeURIComponent(selected)}&user_space=${encodeURIComponent(user_space)}&campaign=${encodeURIComponent(campaign)}`, {
-        method: "DELETE"
+      await deleteRequest("/api/display/layout", {
+        name: selected,
+        user_space,
+        campaign
       });
       setSelected(null);
       await loadLayouts();
       fetchLayouts();
+
     } catch (err) {
       setError("❌ Delete failed");
     }
   };
+
 
   return (
     <SidePanel

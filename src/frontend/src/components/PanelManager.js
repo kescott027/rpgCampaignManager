@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { startCombat } from "../handlers/startCombatHandler";
 import { advanceTurn, reverseTurn } from "../handlers/turnHandlers";
-import InitiativePanel from "./InitiativePanel";
-import CharacterPanel from "./CharacterPanel";
-import { persistInitiativeState } from "../utils/initSync";
+import { get, post } from "../utils/api";
+
 
 export default function PanelManager({
                                        filePath,
@@ -41,8 +40,7 @@ export default function PanelManager({
 
         const loadInitiativeQueue = async () => {
           try {
-            const res = await fetch("/api/combat/combat-queue");
-            const data = await res.json();
+            const data = await get("/api/combat/combat-queue");
             const queue = data.queue || [];
             setInitiativeQueue(queue);
             setCurrentIndex(0);
@@ -57,8 +55,7 @@ export default function PanelManager({
         setInitiativeTab(false);
 
         // Fetch initiative queue from datastore
-        fetch("/api/combat/combat-queue")
-          .then((res) => res.json())
+        get("/api/combat/combat-queue")
           .then((data) => {
             const queue = data.queue || [];
             setInitiativeQueue(queue);
@@ -127,8 +124,7 @@ export default function PanelManager({
         },
 
         onRefresh: async () => {
-          const res = await fetch("/api/combat/combat-queue");
-          const data = await res.json();
+          const data = await get("/api/combat/combat-queue");
           const updated = data.queue || [];
           setInitiativeQueue(updated);
         },
@@ -156,14 +152,8 @@ export default function PanelManager({
         },
 
         onUpdate: async (entries) => {
-          await fetch("/api/combat/update-combat-queue", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ entries })
-          });
-
-          const res = await fetch("/api/combat/combat-queue");
-          const data = await res.json();
+          await post("/api/combat/update-combat-queue", entries);
+          const data = await get("/api/combat/combat-queue");
           setInitiativeQueue(data.queue || []);
         }
       })}

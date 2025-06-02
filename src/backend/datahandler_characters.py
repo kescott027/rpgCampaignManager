@@ -6,7 +6,15 @@ class CharacterDataHandler(RpgDatabase):
         super().__init__()
         self.init()
 
+
     def init(self):
+        table_definition = {
+        "characters": self.init_characters
+        }
+        self.init_as_needed(table_definition)
+        return
+
+    def init_characters(self):
         create_table = """
         CREATE TABLE IF NOT EXISTS characters (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -1,4 +1,5 @@
 import React from "react";
+import { get } from "../utils/api";
 
 export default function DriveListing({ filePath, onFileSelect }) {
   const items = Array.isArray(filePath?.payload) ? filePath.payload : [];
@@ -21,8 +22,7 @@ export default function DriveListing({ filePath, onFileSelect }) {
                     ? `/api/drive/list?folderId=${item.id}`
                     : `/api/drive/file?id=${item.id}`;
 
-                  const res = await fetch(url, { method: "GET", credentials: "include" });
-                  const data = await res.json();
+                  const data = await get(url, { credentials: "include" });
 
                   if (isFolder) {
                     onFileSelect({ type: "drive-listing", payload: data.items });

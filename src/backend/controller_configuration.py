@@ -7,8 +7,6 @@ from src.backend.utility_file import json_loader, project_root, open_file, write
 class Configuration:
 
     def __init__(self,source='Unknown' ):
-        self.source = source
-        logging.debug(f'{source} launching Configuration controller')
         self.current_configs = {}
         self.root_directory = self.set_project_root()
         self.manager_configs = self.open_manager_configs()

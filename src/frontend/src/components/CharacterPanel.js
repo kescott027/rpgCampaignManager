@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import SidePanel from "./SidePanel";
 import CharacterSettingsModal from "./CharacterSettingsModal";
-import { FaPlus, FaPen, FaTimes, FaEyeSlash, FaFolderOpen } from "react-icons/fa";
+import { FaPlus, FaPen } from "react-icons/fa";
+import { get, post } from "../utils/api";
+
 
 export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRequest }) {
   const [characters, setCharacters] = useState([]);
@@ -14,19 +16,18 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
   const [editMode, setEditMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    loadCharacters();
-  }, [showInactive]);
-
-  const loadCharacters = async () => {
+  const loadCharacters = useCallback(async () => {
     try {
-      const res = await fetch(`/api/characters?include_inactive=${showInactive}`);
-      const data = await res.json();
+      const data = await get(`/api/characters?include_inactive=${showInactive}`);
       setCharacters(data.characters || []);
     } catch (err) {
       console.error("❌ Failed to load characters:", err);
     }
-  };
+  }, [showInactive]);
+
+  useEffect(() => {
+    loadCharacters();
+  }, [loadCharacters]);
 
   const handleCheckboxChange = (id) => {
     const newSet = new Set(selectedIds);
@@ -45,13 +46,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
     }));
 
     try {
-      const res = await fetch("/api/combat/load-combat-queue", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entries })
-      });
-
-      const result = await res.json();
+      const result = await post("/api/combat/load-combat-queue", entries);
       console.log("✅ Added to initiative:", result);
 
       // Show confirmation
@@ -74,43 +69,27 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
 
   const campaignList = [...new Set(characters.map(c => c.campaign || "").filter(Boolean))];
 
-  const filteredCharacters = campaignFilter
-    ? characters.filter(c => (c.campaign || "").toLowerCase() === campaignFilter.toLowerCase())
-    : characters;
+  const filteredCharacters = useMemo(() => {
+    return characters
+      .filter(c => {
+        if (!campaignFilter) return true;
+        if (includeUnlabeled && !c.campaign) return true;
+        return (
+          typeof c.campaign === "string" &&
+          c.campaign.toLowerCase() === campaignFilter.toLowerCase()
+        );
+      })
+      .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [characters, campaignFilter, searchTerm, includeUnlabeled]);
 
-  const campaignMatches = (char) => {
-    if (!campaignFilter) return true;
-    if (includeUnlabeled && !char.campaign) return true;
-    return (
-      typeof char.campaign === "string" &&
-      char.campaign.toLowerCase() === campaignFilter.toLowerCase()
-    );
-  };
-
-  const matchesSearch = (char) =>
-    !searchTerm || char.name.toLowerCase().includes(searchTerm.toLowerCase());
-
-  const pcs = characters.filter(
-    (c) =>
-      c.player &&
-      !c.tags?.includes("monster") &&
-      campaignMatches(c) &&
-      matchesSearch(c)
+  const pcs = filteredCharacters.filter(
+    (c) => c.player && !c.tags?.includes("monster")
   );
-
-  const npcs = characters.filter(
-    (c) =>
-      !c.player &&
-      !c.tags?.includes("monster") &&
-      campaignMatches(c) &&
-      matchesSearch(c)
+  const npcs = filteredCharacters.filter(
+    (c) => !c.player && !c.tags?.includes("monster")
   );
-
-  const monsters = characters.filter(
-    (c) =>
-      c.tags?.includes("monster") &&
-      campaignMatches(c) &&
-      matchesSearch(c)
+  const monsters = filteredCharacters.filter(
+    (c) => c.tags?.includes("monster")
   );
 
 
@@ -130,11 +109,13 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
           <button onClick={() => {
             const name = prompt("Enter character name:");
             if (!name) return;
-            fetch("/api/characters/new", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name, player: false, active: true, scene: name, tags: [], conditions: [] })
-            }).then(loadCharacters);
+            post("/api/characters/new", {
+              name, player: false,
+              active: true,
+              scene: name,
+              tags: [], conditions: []
+            })
+              .then(loadCharacters);
           }}><FaPlus /> New
           </button>
           <button onClick={() => setEditMode(!editMode)}><FaPen /> Edit</button>

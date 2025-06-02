@@ -64,6 +64,20 @@ class RpgDatabase:
             return {ui_error_msg}
 
 
+    def table_exists(self, table_name):
+        query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?;"
+        with self.connect() as conn:
+            result = conn.execute(query, (table_name,)).fetchone()
+            return result is not None
+
+
+    def init_as_needed(self, table_definitions):
+        for table_name, init_fn in table_definitions.items():
+            if not self.table_exists(table_name):
+                print(f" Creating missing table: {table_name}")
+                init_fn()
+
+
     def dataset_write(self, executable, params):
         result = {}
         try:

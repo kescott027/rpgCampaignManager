@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { get } from "../utils/api";
 
 export function useStartupMessages() {
   const [message, setMessage] = useState("Starting session...");
@@ -7,14 +8,14 @@ export function useStartupMessages() {
   useEffect(() => {
     async function fetchConfig() {
       try {
-        const res = await fetch("/manager_config.json");
-        const config = await res.json();
+        const config = await get("/api/session/config");
 
-        const sessionName = config.sessionName || "Untitled Session";
-        const isDev = config["developer mode"] === true;
+        const sessionName = config.data.session_name || "Untitled Session";
+        const isDev = config.data["developer_mode"] === true;
 
-        setMessage(`Welcome to ${sessionName}`);
+        setMessage("Welcome to " + sessionName);
         setDevMode(isDev);
+
       } catch (err) {
         console.error("❌ Failed to load config:", err);
         setMessage("Welcome to Untitled Session");

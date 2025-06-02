@@ -1,8 +1,10 @@
 // utils/stickyNoteSync.js
+import { get, post, deleteRequest } from "./api";
+
 
 export async function loadStickyNotes() {
   try {
-    const res = await fetch("/api/display/sticky-notes");
+    const res = await get("/api/display/sticky-notes");
     const data = await res.json();
     return data.notes || [];
   } catch (err) {
@@ -13,13 +15,9 @@ export async function loadStickyNotes() {
 
 export async function saveStickyNotes(layoutName, notes) {
   try {
-    await fetch("/api/display/sticky-notes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: layoutName,
-        notes
-      })
+    await post("/api/display/sticky-notes", {
+      name: layoutName,
+      notes
     });
   } catch (err) {
     console.error("❌ Failed to save sticky notes:", err);
@@ -28,11 +26,8 @@ export async function saveStickyNotes(layoutName, notes) {
 
 export async function handleRenameLayout(oldName, newName) {
   try {
-    const res = await fetch("/api/display/sticky-notes/rename-layout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ old_name: oldName, new_name: newName })
-    });
+    const res = await post("/api/display/sticky-notes/rename-layout",
+      { old_name: oldName, new_name: newName });
     const result = await res.json();
     console.log("✅ Rename result:", result);
   } catch (err) {
@@ -42,9 +37,7 @@ export async function handleRenameLayout(oldName, newName) {
 
 export async function handleDeleteLayout(name, user_space, campaign) {
   try {
-    const res = await fetch(`/api/display/layout?name=${encodeURIComponent(name)}&user_space=${encodeURIComponent(user_space)}&campaign=${encodeURIComponent(campaign)}`, {
-      method: "DELETE"
-    });
+    const res = await deleteRequest(`/api/display/layout?name=${encodeURIComponent(name)}&user_space=${encodeURIComponent(user_space)}&campaign=${encodeURIComponent(campaign)}`);
     const result = await res.json();
     console.log("🗑️ Delete result:", result);
   } catch (err) {

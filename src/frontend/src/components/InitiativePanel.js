@@ -6,7 +6,6 @@ import {
   FaArrowLeft,
   FaTimes,
   FaEyeSlash,
-  FaArrowRight as FaArrowTab,
   FaFolderOpen,
   FaSync,
   FaEdit

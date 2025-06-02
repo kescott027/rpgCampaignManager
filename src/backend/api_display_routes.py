@@ -3,15 +3,23 @@ import logging
 import shutil
 import os
 from pathlib import Path
-from fastapi import APIRouter, Request, Query, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Body, Request, Query, File, Form, UploadFile, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel
 from src.backend.datahandler_display import DisplayDataHandler
 
 
 router = APIRouter()
 router.mount("/assets", StaticFiles(directory="assets"), name="assets")
 display = DisplayDataHandler()
+
+
+class LayoutDeleteRequest(BaseModel):
+    name: str
+    user_space: str
+    campaign: str
+
 
 @router.get("/api/display/sticky-notes")
 def get_sticky_notes(
@@ -69,7 +77,17 @@ def get_sticky_layout(
 
 
 @router.delete("/api/display/layout")
-async def delete_sticky_layout(
+async def delete_sticky_layout(body: LayoutDeleteRequest = Body(...)):
+    logging.info(f"request to delete sticky layout {body.name}-{body.user_space}-{body.campaign}")
+    try:
+        display.delete_layout(body.name, body.user_space, body.campaign)
+        return {"status": f"Layout '{body.name}-{body.user_space}-{body.campaign}' deleted."}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@router.delete("/api/old/display/layout")
+async def delete_sticky_layout_old(
     name: str = Query(...),
     user_space: str = Query(...),
     campaign: str = Query(...)

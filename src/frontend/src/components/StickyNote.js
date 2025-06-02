@@ -5,16 +5,7 @@ import remarkGfm from "remark-gfm";
 
 export default function StickyNote({ id, content, type, position, size, onClose, onUpdate }) {
   const [noteContent, setNoteContent] = useState(type === "markdown" ? "Loading..." : content);
-  /**  const [currentPos, setCurrentPos] = useState(position || { x: 100, y: 100 });
-   const [currentSize, setCurrentSize] = useState(size || { width: 240, height: 180 });
-   const effectivePosition = position ?? { x: 100, y: 100 };
-   const effectiveSize = size ?? { width: 240, height: 180 };
-   // Sync if props change
-   useEffect(() => {
-    if (position) setCurrentPos(position);
-    if (size) setCurrentSize(size);
-  }, [position, size]);
-   **/
+
   useEffect(() => {
     if (type !== "markdown") return;
     if (typeof content !== "string" || !content.includes(".")) return;

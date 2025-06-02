@@ -88,17 +88,13 @@ class CombatDataHandler(RpgDatabase):
         logging.debug(f'datahandler_combat:CombatDataHandler calling superclass RpgDatabase.__init__()')
         super().__init__()
 
-        # inherited attributes:
-        #   self.config = Configuration()
-        #   self.db_path = self.database_path('cm_datastore.db')
-        # built in methods:
-        #   self.connect()
-        #   self.read(executable, rows=None)
-        #   self.write(executable, params=None)
-        #   self.database_path(db_name)
-
 
     def init(self):
+        table_definitions = {
+        "combat_queue": self.init_combat_queue
+        }
+
+    def init_combat_queue(self):
         """Create tables if they don't exist."""
         command = """
         CREATE TABLE IF NOT EXISTS combat_queue (

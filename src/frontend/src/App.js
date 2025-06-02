@@ -16,7 +16,7 @@ export default function App() {
 
 
   useEffect(() => {
-    fetch("/manager_config.json")
+    fetch("/api/config")
       .then((res) => res.json())
       .then((config) => setDevMode(config["developer mode"] === true));
   }, []);

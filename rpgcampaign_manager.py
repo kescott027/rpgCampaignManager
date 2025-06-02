@@ -64,11 +64,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logging.info("\n🛑 Shutting down...")
 
-        # remove drive session token
-        # token_path = os.path.join(".security", "token.json")
-        # if os.path.exists(token_path):
-        #     os.remove(token_path)
-
         # gracefully shut down backend and frontend
         backend_proc.terminate()
         frontend_proc.terminate()

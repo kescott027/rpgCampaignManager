@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import FileTree from "./FileTree";
 import GoogleLoginButton from "./GoogleLogin";
 import logo from "./images/logo.png";
+import { get } from "../utils/api";
 
 export default function Sidebar({ onFileSelect }) {
   const [sessionActive, setSessionActive] = useState(false);
@@ -14,11 +15,9 @@ export default function Sidebar({ onFileSelect }) {
 
   const handleDriveClick = async () => {
     try {
-      const res = await fetch("/api/drive/list?folderId=rpgCampaignManager", {
-        method: "GET",
+      const data = await get("/api/drive/list?folderId=rpgCampaignManager", {
         credentials: "include"
       });
-      const data = await res.json();
 
       if (res.ok && Array.isArray(data)) {
         // Some backends return a raw array, not an object with `.items`
