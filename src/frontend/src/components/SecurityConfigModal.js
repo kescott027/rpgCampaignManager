@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { post } from "../utils/api";
 
 export default function SecurityConfigModal({ onClose }) {
   const [openaiKey, setOpenaiKey] = useState("");
@@ -8,12 +9,9 @@ export default function SecurityConfigModal({ onClose }) {
 
   const saveSecrets = async () => {
     setSaving(true);
-    await fetch("/api/secrets/save", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ openaiKey, googleKey })
-    });
+    await post("/api/secrets/save",
+      { openaiKey, googleKey },
+      { credentials: "include" });
     setSaved(true);
     setTimeout(() => {
       onClose();

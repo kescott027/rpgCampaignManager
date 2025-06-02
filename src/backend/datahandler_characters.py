@@ -1,12 +1,20 @@
-from .controller_datastore import RpgDatabase
+from .datahandler import RpgDatabase
 import json
 
-class CharacterDatastore(RpgDatabase):
+class CharacterDataHandler(RpgDatabase):
     def __init__(self):
         super().__init__()
         self.init()
 
+
     def init(self):
+        table_definition = {
+        "characters": self.init_characters
+        }
+        self.init_as_needed(table_definition)
+        return
+
+    def init_characters(self):
         create_table = """
         CREATE TABLE IF NOT EXISTS characters (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

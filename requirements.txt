@@ -30,3 +30,5 @@ graphviz~=0.20.3
 
 pydantic
 uvicorn>=0.34.2
+
+werkzeug==3.1.3

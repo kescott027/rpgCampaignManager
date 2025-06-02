@@ -1,5 +1,6 @@
 // ChatSection.js
 import React, { useState } from "react";
+import { get, post } from "../utils/api";
 
 export default function ChatSection({
                                       sessionName = "Untitled Session",
@@ -16,12 +17,8 @@ export default function ChatSection({
 
   const sendToBackend = async (payload, endpoint) => {
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      return await res.json();
+      const res = await post(endpoint, payload);
+      return res.data;
     } catch (err) {
       console.error("Backend error:", err);
       setMessages(prev => [...prev, { role: "system", text: "❌ Failed to reach backend." }]);
@@ -54,33 +51,27 @@ export default function ChatSection({
 
     // Regular chat to GPT
     try {
-      const res = await fetch("/api/gpt/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: input, session: sessionName })
+      const data = await post("/api/gpt/proxy", {
+        prompt: input,
+        session: sessionName
       });
 
-      const contentType = res.headers.get("content-type") || "";
-      if (!res.ok || !contentType.includes("application/json")) {
-        const text = await res.text();
-        throw new Error(`Unexpected response:\n${text}`);
-      }
-
-      const data = await res.json();
       const gptMessage = { role: "gpt", text: data.response };
-      setMessages(prev => [...prev, gptMessage]);
+      setMessages((prev) => [...prev, gptMessage]);
     } catch (err) {
       console.error("❌ Error connecting to GPT:", err);
-      setMessages(prev => [...prev, { role: "gpt", text: "❌ Error connecting to GPT: " + err }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "gpt", text: "❌ Error connecting to GPT: " + err.message }
+      ]);
     }
 
     setInput("");
-  };
+  }
 
   const downloadMarkdown = async () => {
     if (!filePath) return;
-    const res = await fetch(`/api/gpt/export-chatlog?path=${encodeURIComponent(filePath.path)}`);
-    const data = await res.json();
+    const data = await get(`/api/gpt/export-chatlog?path=${encodeURIComponent(filePath.path)}`);
     const blob = new Blob([data.markdown], { type: "text/markdown" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);

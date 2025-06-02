@@ -6,13 +6,13 @@ from src.backend.controller_configuration import Configuration
 from src.backend.controller_obs import OBSController
 from src.backend.controller_gpt import GPTProxy
 from src.backend.controller_command import CommandHandler
-from src.backend.controller_combat import CombatDatastore
+from src.backend.datahandler_combat import CombatDataHandler
 
 
 logging.basicConfig(level=logging.INFO)
 router = APIRouter()
 dispatcher = CommandHandler()
-combat_datastore = CombatDatastore()
+combat_datahandler = CombatDataHandler()
 combat_handler = CommandHandler()
 config = Configuration()
 
@@ -33,12 +33,12 @@ async def handle_session_command(request: Request):
 @router.get("/api/session/initiative")
 def get_initiative_order():
     logging.info(f"receeived get erquest for /api/session/initiative")
-    return combat_datastore.get_combat_queue()
+    return combat_datahandler.get_combat_queue()
 
 
-@router.post("/api/session/initiative")
-def update_initiative_order(data: dict):
-    return {"error": "deprecated api"}
+# @router.post("/api/session/initiative")
+# def update_initiative_order(data: dict):
+#    return {"error": "deprecated api"}
 
 
 @router.post("/api/session/rename-character")

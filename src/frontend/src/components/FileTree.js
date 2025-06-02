@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { get } from "../utils/api";
 
 export default function FileTree({ onFileSelect }) {
   const [pathStack, setPathStack] = useState(["root"]);
@@ -9,11 +10,9 @@ export default function FileTree({ onFileSelect }) {
     const fetchContents = async () => {
       try {
         console.log("📁 Fetching folder ID:", currentFolderId);
-        const res = await fetch(`/api/drive/list?folderId=${encodeURIComponent(currentFolderId)}`, {
-          method: "GET",
+        const data = await get(`/api/drive/list?folderId=${encodeURIComponent(currentFolderId)}`, {
           credentials: "include"
         });
-        const data = await res.json();
 
         if (Array.isArray(data?.items)) {
           setContents(data.items);

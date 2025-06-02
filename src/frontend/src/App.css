@@ -52,6 +52,7 @@ body, html, .app-container {
 .display-window {
   background: #f4f4f4;
   padding: 10px;
+  position: relative;
   overflow-y: auto;
 }
 
@@ -149,4 +150,12 @@ body, html, .app-container {
   background-color: #f0fff4;
   border-left: 4px solid green;
   font-weight: bold;
+}
+
+.sticky-markdown h1 {
+  font-size: 1.2em;
+}
+
+.sticky-markdown p {
+  margin: 4px 0;
 }

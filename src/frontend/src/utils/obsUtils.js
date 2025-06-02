@@ -1,11 +1,10 @@
 // obsUtils.js
+import { get } from "./api";
+
 export async function sendSceneToOBS(sceneName) {
   try {
-    const res = await fetch("/api/session/command", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ command: `/obs scene = ${sceneName}` })
-    });
+    const obs_command = { command: `/obs scene = ${sceneName}` };
+    const res = await get("/api/session/command", obs_command);
 
     const result = await res.json();
     console.log("🎬 OBS Scene Switch:", result?.response || result?.status || result);

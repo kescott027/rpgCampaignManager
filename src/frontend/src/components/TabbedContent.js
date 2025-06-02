@@ -17,12 +17,12 @@ export default function TabbedContent({
       activeTab={activeTab}
       onTabChange={setActiveTab}
       tabs={[
-        "Markdown",
-        "JSON",
+        "FileBrowser",
         "Images",
+        "Other",
         ...(initiativeTab ? ["Initiative"] : []),
         ...(charactersTab ? ["Characters"] : []),
-        "ChatGPT"
+        "Archives"
       ]}
       tabContent={{
         Markdown: <pre>{fileType === "text" || fileType === "markdown" ? fileContent : "[Not a Markdown file]"}</pre>,
@@ -59,10 +59,10 @@ export default function TabbedContent({
           />
         ),
 
-        ChatGPT: (
+        Archives: (
           <iframe
-            src="https://chat.openai.com/chat"
-            title="ChatGPT"
+            src="https://2e.aonprd.com/Creatures.aspx"
+            title="Archives of Nethys"
             style={{ width: "100%", height: "75vh", border: "none" }}
           />
         )

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import FileTree from "./FileTree";
 import GoogleLoginButton from "./GoogleLogin";
-import logo from "./assets/logo.png";
+import logo from "./images/logo.png";
+import { get } from "../utils/api";
 
 export default function Sidebar({ onFileSelect }) {
   const [sessionActive, setSessionActive] = useState(false);
@@ -14,16 +15,13 @@ export default function Sidebar({ onFileSelect }) {
 
   const handleDriveClick = async () => {
     try {
-      const res = await fetch("/api/drive/list?folderId=rpgCampaignManager", {
-        method: "GET",
+      const data = await get("/api/drive/list?folderId=rpgCampaignManager", {
         credentials: "include"
       });
-      const data = await res.json();
 
-      if (res.ok && Array.isArray(data)) {
-        // Some backends return a raw array, not an object with `.items`
+      if (data.ok && Array.isArray(data)) {
         onFileSelect({ type: "drive-listing", payload: data });
-      } else if (res.ok && Array.isArray(data.items)) {
+      } else if (data.ok && Array.isArray(data.items)) {
         onFileSelect({ type: "drive-listing", payload: data.items });
       } else {
         console.error("❌ Unexpected response from /api/drive/list:", data);

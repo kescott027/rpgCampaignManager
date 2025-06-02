@@ -2,6 +2,7 @@
   "developer_mode": true,
   "secrets_path": ".security",
   "local_assets_directory": "assets",
+  "database_name": "cm_datastore.db",
   "local_file_store_root": "my_campaigns",
   "my_campaigns": [
     "Forgesworn",

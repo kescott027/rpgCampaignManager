@@ -1,22 +1,35 @@
 import json
 import logging
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 from src.backend.controller_configuration import Configuration
 from src.backend.controller_obs import OBSController
+from src.backend.datahandler_config import ConfigDataHandler
 
 logging.basicConfig(level=logging.DEBUG)
 config = Configuration()
+config_data = ConfigDataHandler()
 obs = OBSController()
 router = APIRouter()
 
 
-@router.get("/api/config")
-def read_config():
+@router.get("/api/session/config")
+def get_config(user_id: str = Query(...)):
+
+    if not user_id:
+        return { "status": 400, "message": "user_id required for session creation" }
+
     try:
-        with open("manager_config.json", "r") as f:
-            return json.load(f)
+        config = self.config_data.get_session_config(user_id)
+
+        if not config:
+            return {"status": 404, "message": "session config not found"}
+
+        config_json = json.dumps(config)
+        return { "status": 200, "data": config_json, "message": "OK" }
+
     except Exception as e:
-        return {"error": str(e)}
+        logging.error(f"api_config_routes failed to return session config from get_config: {e}")
+        return { "status": 500, "message": "Internal Server Error" }
 
 
 @router.post("/api/session/start-combat")

@@ -1,26 +1,27 @@
 import { renderHook } from "@testing-library/react";
 import { waitFor } from "@testing-library/react";
 import { useStartupMessages } from "./useStartupMessages";
+import { get } from "../utils/api";
 
-// Apply mock fetch before tests
-beforeEach(() => {
-  global.fetch = jest.fn(() =>
-    Promise.resolve({
-      json: () =>
-        Promise.resolve({
-          sessionName: "GM Session",
-          "developer mode": true
-        })
-    })
-  );
-});
+jest.mock("../utils/api", () => ({
+  get: jest.fn()
+}));
+
 
 afterEach(() => {
   jest.clearAllMocks();
 });
 
+
 describe("useStartupMessages", () => {
-  test("returns session name and developer mode from config", async () => {
+  it("returns session name and developer mode from config", async () => {
+    get.mockResolvedValueOnce({
+      data: {
+        session_name: "GM Session",
+        developer_mode: true
+      }
+    });
+
     const { result } = renderHook(() => useStartupMessages());
 
     await waitFor(() =>
@@ -31,7 +32,7 @@ describe("useStartupMessages", () => {
   });
 
   test("handles fetch failure gracefully", async () => {
-    fetch.mockImplementationOnce(() => Promise.reject("API down"));
+    get.mockRejectedValueOnce("API down");
 
     const { result } = renderHook(() => useStartupMessages());
 

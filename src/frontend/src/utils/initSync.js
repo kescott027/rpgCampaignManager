@@ -1,10 +1,8 @@
+import { post } from "./api";
+
 export async function persistInitiativeState(entries) {
   try {
-    await fetch("/api/datastore/update-combat-queue", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entries })
-    });
+    await post("/api/combat/update-combat-queue", entries);
   } catch (err) {
     console.error("❌ Failed to persist initiative queue:", err);
   }

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request
-from src.backend.controller_characters import CharacterDatastore
+from src.backend.datahandler_characters import CharacterDataHandler
 
 router = APIRouter()
-db = CharacterDatastore()
+db = CharacterDataHandler()
 
 @router.get("/api/characters")
 def get_characters(include_inactive: bool = False):
