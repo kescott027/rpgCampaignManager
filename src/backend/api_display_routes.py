@@ -155,11 +155,22 @@ async def upload_sticky_asset(
     logging.info(f"sticky-assets Post content")
 
     try:
-        filename = file.filename
+        from werkzeug.utils import secure_filename
+        filename = secure_filename(file.filename)
         ext = Path(filename).suffix.lower()
 
         # Create folder if needed
-        asset_folder = Path("assets", user_space, campaign) # / layout
+        safe_root = Path("assets").resolve()
+        asset_folder = safe_root / user_space / campaign
+
+        # Normalize and validate that the resolved path is within the safe root directory
+        try:
+            asset_folder = asset_folder.resolve(strict=True)
+            if not asset_folder.is_relative_to(safe_root):
+                raise ValueError("Path traversal detected")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid path")
+
         asset_folder.mkdir(parents=True, exist_ok=True)
 
         asset_path = asset_folder / filename
@@ -186,22 +197,23 @@ async def get_asset_file(user_space: str, campaign: str, filename: str):
     ext = Path(filename).suffix.lower()
     logging.info(f"returning file type: {ext}")
 
-    asset_path = os.path.join("assets", user_space, campaign, filename)
+    safe_root = Path("assets").resolve()
+    asset_path = safe_root / user_space / campaign / filename
+
+    # Normalize and validate that the resolved path is within the safe root directory
+    try:
+        asset_path = asset_path.resolve(strict=False)
+        if not asset_path.is_relative_to(safe_root):
+            raise HTTPException(status_code=400, detail="Path traversal detected")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid path")
 
     if ext in [".md", ".txt"]:
-            with Path(asset_path).open("r", encoding="utf-8") as f:
-                content = f.read()
-            # return {
-            #    "status": "✅ Uploaded",
-            #    "type": "markdown",
-            #    "content": content,
-            #    "filename": filename
-            #}
-            return content
+        with asset_path.open("r", encoding="utf-8") as f:
+            content = f.read()
+        return content
 
-    asset_path = os.path.join("assets", user_space, campaign, filename)
-
-    if not os.path.exists(asset_path):
+    if not asset_path.exists():
         raise HTTPException(status_code=404, detail="Asset not found")
 
     return FileResponse(asset_path)
