@@ -161,8 +161,11 @@ async def upload_sticky_asset(
     campaign: str = Form("ForgeSworn"),
     type: str = Form("image")
 ):
-    logging.info(f"sticky-assets Post content")
+    safe_campaign = sanitize_input(campaign)
+    safe_user_space = sanitize_input(user_space)
     layout = sanitize_input(layout)
+    logging.info(f"sticky-assets Post content: {user_space}-{campaign}-{layout}")
+
     try:
         from werkzeug.utils import secure_filename
         filename = secure_filename(file.filename)
@@ -175,27 +178,30 @@ async def upload_sticky_asset(
         # Normalize and validate that the resolved path is within the safe root directory
         try:
             asset_folder = asset_folder.resolve(strict=True)
+            logging.info(f"asset_folder: {asset_folder}")
             if not asset_folder.is_relative_to(safe_root):
                 raise ValueError("Path traversal detected")
         except Exception:
+            logging.error("failed to post sticky-note - path failure")
             raise HTTPException(status_code=400, detail="Invalid path")
 
         asset_folder.mkdir(parents=True, exist_ok=True)
-
-        asset_path = sanitize_input(asset_folder) / sanitize_input(filename)
-
+        asset_path = f"{sanitize_input(str(asset_folder))}/{sanitize_input(str(filename))}"
+        asset_path = Path(asset_path)
+        logging.info(f"asset path: {asset_path}")
         # Save file to disk
         with asset_path.open("wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        display.post_sticky_assets(file, type, asset_path, safe_space, safe_campaign, layout)
-        relative_path=f"./{str(asset_path)}"
+        display.post_sticky_assets(file, type, asset_path, safe_user_space, safe_campaign, layout)
+        relative_path=f"/assets/{safe_user_space}/{safe_campaign}/{filename}"
         # Return relative path for use in <img src="...">
-
-        return {"status": "✅ Uploaded", "asset_path": relative_path}
+        logging.info(f"status: 200, message: ✅ Uploaded, asset_path: {relative_path}")
+        return {"status": 200, "message": "✅ Uploaded", "asset_path": relative_path}
 
     except Exception as e:
-        return {"error": str(e)}
+        logging.error(f"upload failed - status 500, message: Error {str(e)}")
+        return {"status": 500, "message": "Error: sticky asset post failed."}
 
 
 @router.get("/assets/{user_space}/{campaign}/{filename}")

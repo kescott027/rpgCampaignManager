@@ -12,10 +12,6 @@ import { get, post } from "../utils/api";
 
 export default function DisplayWindow({ filePath, initialTab = "Markdown", onFileSelect }) {
 
-  const [activeTab, setActiveTab] = useState(initialTab);
-  const [fileContent, setFileContent] = useState("");
-  const [fileType, setFileType] = useState("text");
-
   const [initiativeTab, setInitiativeTab] = useState(false);
   const [charactersTab, setCharactersTab] = useState(false);
   const [stickyNotes, setStickyNotes] = useState([]);
@@ -23,13 +19,58 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   const [currentLayout, setCurrentLayout] = useState("default");
   const [layoutNames, setLayoutNames] = useState([]);
   const [selectedLayout, setSelectedLayout] = useState("");
-
   const debouncedSaveStickyNotes = debounce((layoutName, notes) => {
     saveStickyNotes(layoutName, notes);
   }, 300);
+  const [tabs, setTabs] = useState([{ key: "archives", label: "Archives" }]);
+  const [activeTab, setActiveTab] = useState("archives");
+  const [sceneTabs, setSceneTabs] = useState([]);
+  const [currentScene, setCurrentScene] = useState(null);
+  const [newSceneName, setNewSceneName] = useState("");
+  const addSceneTab = (sceneName) => {
+    const tabKey = `scene:${sceneName}`;
+    if (!tabs.find(t => t.key === tabKey)) {
+      setTabs([...tabs, { key: tabKey, label: sceneName }]);
+    }
+    setActiveTab(tabKey);
+    loadSceneLayout(sceneName);
+  };
 
   const user_space = "local";
   const campaign = "sandbox";
+
+  const loadSceneLayout = async (sceneName) => {
+    try {
+      const layoutName = `scene:${sceneName}`;
+      const data = await get(`/api/display/layout?name=${encodeURIComponent(layoutName)}&user_space=local&campaign=sandbox`);
+      if (Array.isArray(data.notes)) {
+        setStickyNotes(data.notes);
+        setCurrentLayout(layoutName);
+      }
+    } catch (err) {
+      console.error("❌ Failed to load scene layout:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!currentScene) return;
+
+    const layoutName = `scene:${currentScene}`;
+
+    get(`/api/display/layout?name=${encodeURIComponent(layoutName)}&user_space=local&campaign=sandbox`)
+      .then(data => {
+        if (Array.isArray(data.notes)) {
+          setStickyNotes(data.notes);
+          setCurrentLayout(layoutName);
+          console.log(`✅ Loaded layout for ${layoutName}`);
+        }
+      })
+      .catch(err => {
+        console.warn("⚠️ No layout for scene, starting fresh.");
+        setStickyNotes([]);
+        setCurrentLayout(layoutName);
+      });
+  }, [currentScene]);
 
   const fetchLayouts = async () => {
     try {
@@ -109,57 +150,59 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   }, [stickyNotes]);
 
 
-const handleDrop = async (e) => {
-  e.preventDefault();
-  console.log("📦 Files dropped:", e.dataTransfer.files);
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    console.log("📦 Files dropped:", e.dataTransfer.files);
 
-  const files = Array.from(e.dataTransfer.files);
+    const files = Array.from(e.dataTransfer.files);
 
-  try {
-    for (const file of files) {
-      const type = file.type;
+    try {
+      for (const file of files) {
+        const type = file.type;
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("layout", currentLayout || "default");
+        formData.append("user_space", user_space || "local");
+        formData.append("campaign", campaign || "sandbox");
+        formData.append("type", file.type);
 
-      const formData = new FormData();
-      formData.append("file", file);
+//        const response = await post("/api/display/sticky-assets", formData);
+//        const uploadData = await response.json();  // <-- required
+//        const assetPath = uploadData.asset_path;
 
-      formData.append("layout", currentLayout || "default");
-      formData.append("user_space", user_space || "local");
-      formData.append("campaign", campaign || "sandbox");
-      formData.append("type", file.type);
+        const uploadData = await post("/api/display/sticky-assets", formData);
+        console.log("✅ Parsed uploadData:", uploadData);
+        const assetPath = uploadData.asset_path;
+        console.log("✅ asset path:", assetPath);
+        const reader = new FileReader();
 
-      const uploadData = await post("/api/display/sticky-assets", formData);
-      const assetPath = uploadData.asset_path;
-      console.log("Returned assetPath:", assetPath);
-
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        const id = Date.now();
-        const note = {
-          id,
-          type: type.startsWith("image") ? "image" : "markdown",
-          content: assetPath,
-          position: {
-            x: e.clientX - 50,
-            y: e.clientY - 50
-          },
-          size: { width: 240, height: 180 }
+        reader.onload = () => {
+          const id = Date.now();
+          const note = {
+            id,
+            type: type.startsWith("image") ? "image" : "markdown",
+            content: assetPath,
+            position: {
+              x: e.clientX - 50,
+              y: e.clientY - 50
+            },
+            size: { width: 240, height: 180 }
+          };
+          console.log("🧷 New sticky note data:", note);
+          setStickyNotes(prev => {
+            const updated = [...prev, note];
+            saveStickyNotes(currentLayout, updated);
+            console.log("Sticky note created:", note);
+            return updated;
+          });
         };
-        console.log("🧷 New sticky note data:", note);
-        setStickyNotes(prev => {
-          const updated = [...prev, note];
-          saveStickyNotes(currentLayout, updated);
-          console.log("Sticky note created:", note);
-          return updated;
-        });
-      };
 
-      if (type.startsWith("image")) {
-        reader.readAsDataURL(file);  // Just to trigger reader.onload
-      } else if (type === "text/markdown" || type === "text/plain") {
-        reader.readAsText(file);
+        if (type.startsWith("image")) {
+          reader.readAsDataURL(file);  // Just to trigger reader.onload
+        } else if (type === "text/markdown" || type === "text/plain") {
+          reader.readAsText(file);
+        }
       }
-    }
 
     } catch (err) {
       console.error("❌ Error handling dropped file:", err);
@@ -169,30 +212,6 @@ const handleDrop = async (e) => {
   const handleDragOver = (e) => {
     e.preventDefault();
   };
-
-  useEffect(() => {
-    if (!filePath || typeof filePath !== "string") return;
-    get(`/api/localstore/load-file?path=${encodeURIComponent(filePath)}`, {
-      credentials: "include"
-    })
-      .then((data) => {
-        if (data) {
-          setFileContent(data.content || "");
-          setFileType(data.type || "text");
-        }
-      })
-      .catch((err) => {
-        console.error("Error loading file:", err);
-        setFileContent("[Error loading file]");
-      });
-  }, [filePath]);
-
-  if (!filePath && !initiativeTab && !charactersTab) {
-    return <div className="display-window">No file selected</div>;
-  }
-
-  const showDrive = filePath?.type === "drive-listing";
-  const showFile = filePath?.type === "drive-file";
 
   return (
     <div className="display-window" style={{ display: "flex", position: "relative", overflow: "visible" }}
@@ -207,24 +226,43 @@ const handleDrop = async (e) => {
         renderInitiativePanel={(isTab, controls) => <InitiativePanel {...controls} />}
         renderCharacterPanel={(isTab, controls) => <CharacterPanel {...controls}
                                                                    onCommandRequest={(cmd) => onFileSelect(cmd)} />}
-
       />
+      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
+        <input
+          type="text"
+          placeholder="New Scene Name"
+          value={newSceneName}
+          onChange={(e) => setNewSceneName(e.target.value)}
+        />
+        <button
+          onClick={() => {
+            if (!newSceneName) return;
+            const scene = { label: newSceneName, content: "", fileType: "markdown" };
+            setSceneTabs((prev) => [...prev, scene]);
+            setActiveTab(newSceneName);
+            setCurrentScene(newSceneName);
+            setNewSceneName("");
+          }}
+        >
+          ➕ Add Scene
+        </button>
+      </div>
 
       <div style={{ flex: 1 }}>
-
         {filePath?.type === "drive-listing" ? (
           <DriveListing filePath={filePath} onFileSelect={onFileSelect} />
         ) : filePath?.type === "drive-file" ? (
           <pre>{filePath.payload}</pre>
         ) : (
           <TabbedContent
-            filePath={filePath}
-            fileType={fileType}
-            fileContent={fileContent}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             initiativeTab={initiativeTab}
             charactersTab={charactersTab}
+            sceneTabs={sceneTabs}
+            setSceneTabs={setSceneTabs}
+            currentScene={currentScene}
+            setCurrentScene={setCurrentScene}
           />
         )}
         <div style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "center" }}>
@@ -259,6 +297,7 @@ const handleDrop = async (e) => {
         </div>
 
       </div>
+
       <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
         {Array.isArray(stickyNotes) && stickyNotes.map(note => (
           <StickyNote
@@ -283,7 +322,6 @@ const handleDrop = async (e) => {
           />
         ))}
       </div>
-
       {showLayoutManager && (
         <ManageLayoutsPanel
           onClose={() => setShowLayoutManager(false)}
@@ -295,7 +333,5 @@ const handleDrop = async (e) => {
         />
       )}
     </div>
-
   );
-
 }

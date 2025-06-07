@@ -6,12 +6,24 @@ import { get } from "../utils/api";
 
 export default function Sidebar({ onFileSelect }) {
   const [sessionActive, setSessionActive] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("darkMode") === "true";
+  });
 
   useEffect(() => {
     // Detect session by checking cookie
     const hasSession = document.cookie.includes("session_id=");
     setSessionActive(hasSession);
   }, []);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+    localStorage.setItem("darkMode", darkMode);
+  }, [darkMode]);
 
   const handleDriveClick = async () => {
     try {
@@ -40,11 +52,10 @@ export default function Sidebar({ onFileSelect }) {
         <h2>Campaign Manager</h2>
       </div>
 
-      <GoogleLoginButton
-        sessionActive={sessionActive}
-        onLogout={() => setSessionActive(false)}
-      />
-
+      <hr style={{ margin: "10px 0" }} />
+      <button onClick={() => setDarkMode(prev => !prev)}>
+        {darkMode ? "🌙 Dark Mode On" : "☀️ Light Mode"}
+      </button>
       <div className="section">
         <input
           type="text"
@@ -90,17 +101,6 @@ export default function Sidebar({ onFileSelect }) {
           <li>GM Assets</li>
           <li>Combat Mode</li>
         </ul>
-      </div>
-
-      <div className="section">
-        <h4>🛠️ Debug Tools</h4>
-        <button
-          onClick={handleDriveClick}
-          style={{ width: "100%", padding: "5px" }}
-          aria-label="Trigger Root Folder API Test"
-        >
-          🔍 Test Root Folder
-        </button>
       </div>
     </div>
   );

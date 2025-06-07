@@ -159,3 +159,17 @@ body, html, .app-container {
 .sticky-markdown p {
   margin: 4px 0;
 }
+
+body.dark-mode {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+}
+
+.dark-mode .sidebar {
+  background-color: #2a2a2a;
+}
+
+.dark-mode button {
+  background-color: #333;
+  color: #f0f0f0;
+}
