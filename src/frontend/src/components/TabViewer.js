@@ -5,7 +5,9 @@ export default function TabViewer({
                                     activeTab,
                                     onTabChange,
                                     tabs = [],
-                                    tabContent = {}
+                                    tabContent = {},
+                                    onTabSelected = () => {
+                                    }
                                   }) {
   return (
     <div className="tab-viewer">
@@ -16,7 +18,10 @@ export default function TabViewer({
             role="button"
             aria-pressed={tab === activeTab}
             className={`tab ${tab === activeTab ? "active" : ""}`}
-            onClick={() => onTabChange(tab)}
+            onClick={() => {
+              onTabChange(tab);
+              onTabSelected(tab);
+            }}
             style={{
               padding: "8px 12px",
               cursor: "pointer",

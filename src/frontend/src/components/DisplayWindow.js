@@ -28,7 +28,7 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   const [currentScene, setCurrentScene] = useState(null);
   const [newSceneName, setNewSceneName] = useState("");
   const addSceneTab = (sceneName) => {
-    const tabKey = `scene:${sceneName}`;
+    const tabKey = `${sceneName}`;
     if (!tabs.find(t => t.key === tabKey)) {
       setTabs([...tabs, { key: tabKey, label: sceneName }]);
     }
@@ -41,11 +41,10 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
 
   const loadSceneLayout = async (sceneName) => {
     try {
-      const layoutName = `scene:${sceneName}`;
-      const data = await get(`/api/display/layout?name=${encodeURIComponent(layoutName)}&user_space=local&campaign=sandbox`);
+      const data = await get(`/api/display/layout?name=${encodeURIComponent(sceneName)}&user_space=local&campaign=sandbox`);
       if (Array.isArray(data.notes)) {
         setStickyNotes(data.notes);
-        setCurrentLayout(layoutName);
+        setCurrentLayout(sceneName);
       }
     } catch (err) {
       console.error("❌ Failed to load scene layout:", err);
@@ -55,9 +54,10 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   useEffect(() => {
     if (!currentScene) return;
 
-    const layoutName = `scene:${currentScene}`;
+    const layoutName = currentScene;
 
-    get(`/api/display/layout?name=${encodeURIComponent(layoutName)}&user_space=local&campaign=sandbox`)
+    get(`/api/display/layout?name=${
+      encodeURIComponent(layoutName)}&user_space=${encodeURIComponent(user_space)}&campaign=${encodeURIComponent(campaign)}`)
       .then(data => {
         if (Array.isArray(data.notes)) {
           setStickyNotes(data.notes);
@@ -75,9 +75,24 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
   const fetchLayouts = async () => {
     try {
       const data = await get("/api/display/layout/list");
-      setLayoutNames(Array.isArray(data.layouts) ? data.layouts : []);
+      const layouts = Array.isArray(data.layouts) ? data.layouts : [];
+      setLayoutNames(layouts);
+      const generatedScenes = layouts.map(name => ({
+        label: name,
+        content: "",               // lazy-loaded later
+        fileType: "markdown"       // can adjust this per layout metadata in future
+      }));
+
+      setSceneTabs(generatedScenes);
+
+      // Load the first scene if none selected
+      if (!currentScene && generatedScenes.length > 0) {
+        setCurrentScene(generatedScenes[0].label);
+        setActiveTab(generatedScenes[0].label);
+      }
+
     } catch (err) {
-      console.error("❌ Failed to fetch layout names:", err);
+      console.error("❌ Failed to fetch layouts:", err);
     }
   };
 
@@ -183,8 +198,8 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
             type: type.startsWith("image") ? "image" : "markdown",
             content: assetPath,
             position: {
-              x: e.clientX - 50,
-              y: e.clientY - 50
+              x: e.clientX - 200,
+              y: e.clientY - 180
             },
             size: { width: 240, height: 180 }
           };
@@ -227,26 +242,6 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
         renderCharacterPanel={(isTab, controls) => <CharacterPanel {...controls}
                                                                    onCommandRequest={(cmd) => onFileSelect(cmd)} />}
       />
-      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
-        <input
-          type="text"
-          placeholder="New Scene Name"
-          value={newSceneName}
-          onChange={(e) => setNewSceneName(e.target.value)}
-        />
-        <button
-          onClick={() => {
-            if (!newSceneName) return;
-            const scene = { label: newSceneName, content: "", fileType: "markdown" };
-            setSceneTabs((prev) => [...prev, scene]);
-            setActiveTab(newSceneName);
-            setCurrentScene(newSceneName);
-            setNewSceneName("");
-          }}
-        >
-          ➕ Add Scene
-        </button>
-      </div>
 
       <div style={{ flex: 1 }}>
         {filePath?.type === "drive-listing" ? (
@@ -263,6 +258,20 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
             setSceneTabs={setSceneTabs}
             currentScene={currentScene}
             setCurrentScene={setCurrentScene}
+            newSceneName={newSceneName}
+            setNewSceneName={setNewSceneName}
+            clearStickyNotes={() => setStickyNotes([])}
+          />
+
+        )}
+        {showLayoutManager && (
+          <ManageLayoutsPanel
+            onClose={() => setShowLayoutManager(false)}
+            onRename={handleRenameLayout}
+            onDelete={handleDeleteLayout}
+            user_space={user_space}
+            campaign={campaign}
+            fetchLayouts={fetchLayouts}
           />
         )}
         <div style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "center" }}>
@@ -292,7 +301,7 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
           </select>
           <button onClick={handleSaveLayout}>💾 Save Layout</button>
           <button onClick={() => setShowLayoutManager(true)}>
-            🛠️ Manage Layouts
+            🛠️ Manage Scenes
           </button>
         </div>
 
@@ -322,16 +331,6 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
           />
         ))}
       </div>
-      {showLayoutManager && (
-        <ManageLayoutsPanel
-          onClose={() => setShowLayoutManager(false)}
-          onRename={handleRenameLayout}
-          onDelete={handleDeleteLayout}
-          user_space={user_space}
-          campaign={campaign}
-          fetchLayouts={fetchLayouts}
-        />
-      )}
     </div>
   );
 }

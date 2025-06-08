@@ -77,7 +77,7 @@ export default function ManageLayoutsPanel({ onClose, onHide, onTabView, user_sp
 
   return (
     <SidePanel
-      title="Manage Layouts"
+      title="Manage Scenes"
       icon="🗂️"
       onClose={onClose}
       onHide={onHide}

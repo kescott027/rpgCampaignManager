@@ -4,6 +4,7 @@ import InitiativePanel from "./InitiativePanel";
 import CharacterPanel from "./CharacterPanel";
 import ReactMarkdown from "react-markdown";
 
+
 export default function TabbedContent({
                                         activeTab,
                                         setActiveTab,
@@ -11,27 +12,11 @@ export default function TabbedContent({
                                         charactersTab,
                                         sceneTabs = [],
                                         setSceneTabs,
-                                        currentScene,
-                                        setCurrentScene
+                                        setCurrentScene,
+                                        newSceneName,
+                                        setNewSceneName,
+                                        clearStickyNotes
                                       }) {
-
-  /**
-   const baseTabs = [
-   ...(initiativeTab ? ["Initiative"] : []),
-   ...(charactersTab ? ["Characters"] : []),
-   "Archives"
-   ];
-
-   // Define all your dynamic tabs in one list
-   const tabLabels = [
-   ...sceneTabs.map(s => s.label),
-   ...(initiativeTab ? ["Initiative"] : []),
-   ...(charactersTab ? ["Characters"] : []),
-   "Archives"
-   ];
-   **/
-
-    // const allTabs = [...sceneTabs.map(t => t.label), ...baseTabs];
 
   const tabContent = {};
 
@@ -85,7 +70,32 @@ export default function TabbedContent({
     />
   );
 
-  const tabLabels = Object.keys(tabContent);
+  tabContent["Scenes"] = (
+    <div style={{ padding: "10px" }}>
+      <h3>Manage Scenes</h3>
+      <input
+        type="text"
+        placeholder="New Scene Name"
+        value={newSceneName}
+        onChange={(e) => setNewSceneName(e.target.value)}
+        style={{ marginRight: "8px" }}
+      />
+      <button
+        onClick={() => {
+          if (!newSceneName.trim()) return;
+          const scene = { label: newSceneName, content: "", fileType: "markdown" };
+          setSceneTabs((prev) => [...prev, scene]);
+          setActiveTab(newSceneName);
+          setCurrentScene(newSceneName);
+          setNewSceneName("");
+        }}
+      >
+        ➕ Add Scene
+      </button>
+    </div>
+  );
+
+  const tabLabels = ["Scenes", ...Object.keys(tabContent).filter(tab => tab !== "Scenes")];
 
   return (
     <div>
@@ -95,6 +105,13 @@ export default function TabbedContent({
           setActiveTab(tab);
           if (sceneTabs.some(s => s.label === tab)) {
             setCurrentScene(tab);
+          } else {
+            setCurrentScene(null);
+          }
+        }}
+        onTabSelected={(tab) => {
+          if (tab === "Archives" || tab === "Scenes") {
+            clearStickyNotes();
           }
         }}
         tabs={tabLabels}

@@ -1,12 +1,12 @@
 # api_display_routes.py
 import logging
-import shutil
 import os
 from pathlib import Path
 from fastapi import APIRouter, Body, Request, Query, File, Form, UploadFile, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
+from werkzeug.utils import secure_filename
 from src.backend.datahandler_display import DisplayDataHandler
 from src.backend.utility_security import sanitize_input
 
@@ -164,10 +164,9 @@ async def upload_sticky_asset(
     safe_campaign = sanitize_input(campaign)
     safe_user_space = sanitize_input(user_space)
     layout = sanitize_input(layout)
-    logging.info(f"sticky-assets Post content: {user_space}-{campaign}-{layout}")
+    logging.info(f"sticky-assets Post content: {user_space}/{campaign}/{layout}/{file.filename}")
 
     try:
-        from werkzeug.utils import secure_filename
         filename = secure_filename(file.filename)
         ext = Path(filename).suffix.lower()
 
@@ -189,9 +188,6 @@ async def upload_sticky_asset(
         asset_path = f"{sanitize_input(str(asset_folder))}/{sanitize_input(str(filename))}"
         asset_path = Path(asset_path)
         logging.info(f"asset path: {asset_path}")
-        # Save file to disk
-        with asset_path.open("wb") as f:
-            shutil.copyfileobj(file.file, f)
 
         display.post_sticky_assets(file, type, asset_path, safe_user_space, safe_campaign, layout)
         relative_path=f"/assets/{safe_user_space}/{safe_campaign}/{filename}"

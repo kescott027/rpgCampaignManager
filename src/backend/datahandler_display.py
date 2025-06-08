@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import shutil
 from fastapi.responses import JSONResponse
 from src.backend.datahandler import RpgDatabase
 from src.backend.controller_configuration import Configuration
@@ -301,10 +302,18 @@ class DisplayDataHandler(RpgDatabase):
 
 
     def post_sticky_assets(self, file_data, type, path, user_space=None, campaign=None, layout=None):
-        # self.local_store
-        file_name = file_data.filename
-        logging.info(f"save filename to db: {file_name}")
 
+        file_name = file_data.filename
+        # Save file to disk
+        try:
+            logging.info(f"saving {file_name} to disk")
+            with path.open("wb") as f:
+                shutil.copyfileobj(file_data.file, f)
+        except shutil.SameFileError:
+            logging.warn(f"sticky_assets source  and destination match, skipping copy")
+
+        # self.local_store
+        logging.info(f"save filename to db: {file_name}")
 
         try:
             response = self.insert_sticky_asset(
@@ -314,7 +323,6 @@ class DisplayDataHandler(RpgDatabase):
                 user_space,
                 campaign,
             )
-
 
             return response
 
