@@ -328,6 +328,14 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
                 return updated;
               });
             }}
+            onSendToOBS={(id) => {
+              const imageNote = stickyNotes.find(n => n.id === id);
+              if (imageNote && imageNote.type === "image") {
+                post("api/obs/send-image", { path: imageNote.content })
+                  .then(() => console.log("Sent to OBS"))
+                  .catch(err => console.error("Send to OBS Failed", err));
+              }
+            }}
           />
         ))}
       </div>

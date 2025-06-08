@@ -1,15 +1,16 @@
 import os
 import json
 import logging
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
-from src.backend.controller_obs import OBSController
+from src.backend.controller_obs import OBSController, OBSCommandHandler
 
 
 logging.basicConfig(level=logging.DEBUG)
 router = APIRouter()
 obs = OBSController()
+obs_handler = OBSCommandHandler()
 
 @router.post("/api/obs/command")
 async def handle_obs_command(request: Request):
@@ -21,3 +22,14 @@ async def handle_obs_command(request: Request):
         return {"status": result}
     except Exception as e:
         return {"error": str(e)}
+
+@router.post("/api/obs/send-image")
+async def send_image_to_obs(payload: dict):
+    path = payload.get("path")
+    if not path:
+        raise HTTPException(status_code=400, detail="Missing image path")
+
+    success = obs_handler.send_image_to_campaign_scene(path)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to send image to OBS")
+    return {"status": 200, "message": "Image sent to OBS"}

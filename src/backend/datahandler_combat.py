@@ -28,7 +28,6 @@ class InitiativeCommandHandler:
         return None
 
     def previous_action(self, command, args=None):
-       from src.backend.dataHandler import CombatDataHandler
        db = CombatDataHandler()
 
        prev = db.reverse_turn()
@@ -51,7 +50,6 @@ class InitiativeCommandHandler:
 
 
     def next_action(self, command, args=None):
-       from src.backend.dataHandler import CombatDataHandler
        db = CombatDataHandler()
 
        next_entry = db.advance_turn()
@@ -135,7 +133,7 @@ class CombatDataHandler(RpgDatabase):
             }
             for current_character in initiative_queue
         ])
-        logging.debug(f"CombatDataHandler.get_combat_queue fetcing : {result}")
+        logging.debug(f"CombatDataHandler.get_combat_queue fetching : {result}")
         return result
 
 

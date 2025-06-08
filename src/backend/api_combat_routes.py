@@ -2,7 +2,6 @@ import logging
 from fastapi import APIRouter, Request
 from src.backend.datahandler_combat import CombatDataHandler, CombatHandler
 
-
 logging.basicConfig(level=logging.INFO)
 router = APIRouter()
 datahandler = CombatDataHandler()
@@ -34,9 +33,15 @@ async def load_combat_queue(request: Request):
 
 @router.get("/api/combat/current-turn")
 def get_current_turn():
-    from src.backend.dataHandler import CombatDataHandler
     logging.debug(f"api_combat_routes: -> datahandler: get_current_turn")
     return datahandler.get_current_turn() or {"error": "No active combat."}
+
+
+@router.post("/api/combat/turn")
+def get_current_turn(data: dict):
+    turn = data.get('turn', 0)
+    logging.debug(f"api_combat_routes: -> datahandler: set_initiative")
+    return datahandler.set_current_turn(turn)
 
 
 @router.post("/api/combat/update-combat-queue")

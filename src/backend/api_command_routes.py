@@ -29,7 +29,6 @@ async def handle_session_command(request: Request):
     return dispatcher.interface(data)
 
 
-
 @router.get("/api/session/initiative")
 def get_initiative_order():
     logging.info(f"receeived get erquest for /api/session/initiative")

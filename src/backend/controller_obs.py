@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+from pathlib import Path
 import obsws_python as obs
 from src.backend.controller_configuration import Configuration as Config
 from src.backend.utility_file import json_loader
@@ -10,9 +11,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 class OBSController:
-    def __init__(self, host='localhost', port=4455, password=None, source='Unknown'):
-        self.source = source
-        logging.debug(f'{source} launching OBSController')
+    def __init__(self, host='localhost', port=4455, password=None, source=None):
         self.config = Config(source='OBSController')
         self.host = host
         self.port = port
@@ -45,16 +44,19 @@ class OBSController:
 
     def execute_command(self, command, args):
         # redo with updated web socket
+        command_args = args[0]
         try:
             self.connect()
+            command_options = {
+                "scene": self.change_scene,
+                "record": self.toggle_recording
+            }
 
-            if command == "scene":
-                return self.change_scene(args[0]) if args else "No scene name provided."
-            elif command == "record":
-                action = args[0].lower() if args else "start"
-                return self.toggle_recording(action)
-            else:
+            command = command_options.get(command, None)
+            if not command:
                 return f"❓ Unknown command: {command}"
+            else:
+                return command(command_args)
 
         except Exception as e:
             logging.error(f"OBS command failed: {e}")
@@ -69,22 +71,46 @@ class OBSController:
         return f"🎬 Switched scene to '{scene_name}'"
 
 
+    def get_scene_list(self):
+        logging.info(f"retrieving scene names")
+        response = self.ws.get_scene_list()
+        logging.error(dir(response))
+        return response.scenes
+
+
     def connect(self):
         try:
             self.ws = obs.ReqClient(host='localhost', port=4455, password=self.password)
             logging.info("✅ Connected to OBS WebSocket")
         except Exception as e:
             logging.error(f"❌ Failed to connect to OBS: {e}")
-            raise
+        return
+
+
+    def create_scene(self, scene_name):
+        self.ws.create_scene(scene_name)
+        return True
+
+
+    def create_scene_item(self, scene_name, image_path, enabled=True):
+        return self.ws.create_scene_item(scene_name, image_path, enabled=True,)
+
+
+    def broadcast(self, payload):
+        self.ws.broadcast_custom_event(payload)
+        logging.info("OBS Broadcasting custom event")
+        return
 
 
     def disconnect(self):
         if self.ws:
             self.ws.disconnect()
-            logging.info("🔌 Disconnected from OBS WebSocket")
+            logging.info("Disconnected from OBS WebSocket")
+        return
 
 
-    def toggle_recording(self, action):
+    def toggle_recording(self, action="start"):
+        action = action.lower()
         if action == "start":
             self.ws.call(requests.StartRecord())
             return "⏺️ Recording started"
@@ -97,20 +123,41 @@ class OBSController:
 
 
 class OBSCommandHandler:
-    def __init__(self, source='Unknown'):
-        self.proxy = OBSController(source='OBSCommandHandler')
-        self.source = source
-        logging.debug(f'{source} launching OBSController')
+    def __init__(self, source=None  ):
+        self.proxy = OBSController()
+
 
     def scene(self, command, args):
         logging.info(f"OBSCommandHandler calling command: {command} args: {args}")
         if not args:
-            return {"response": "⚠️ Usage: /obs scene = <SceneName>"}
+            return {"response": "Usage: /obs scene = <SceneName>"}
 
         scene = args.replace('scene =', '').strip()
 
         logging.info(f"sending scene change to proxy {scene}")
         self.proxy.change_scene(scene)
-        return {"response": f"🎬 Scene changed to '{scene}'"}
+        return {"response": f"Scene changed to '{scene}'"}
 
-        return {"response": "⚠️ Invalid OBS command. Use /obs scene = <SceneName>"}
+
+    def send_image_to_campaign_scene(self, image_path):
+        current_dir = str(os.getcwd())
+        logging.info(f"current directory: {current_dir}")
+        abs_path = f"{current_dir}{image_path}"
+        # abs_path = Path(combined_path)
+        scene_name = "campaignManager"
+        source_name = "StickyImage"
+        logging.info(f"sending {abs_path} to OBS")
+
+        scenes = self.proxy.get_scene_list()
+
+        exists = any(d.get("sceneName") == scene_name for d in scenes)
+        if not exists:
+            self.proxy.create_scene(scene_name)
+
+        # Create or update image source
+        params = self.proxy.create_scene_item(scene_name, abs_path, enabled=True,)
+        self.proxy.change_scene(scene)
+
+        return True
+
+

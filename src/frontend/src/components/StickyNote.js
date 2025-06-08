@@ -3,7 +3,7 @@ import { Rnd } from "react-rnd";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-export default function StickyNote({ id, content, type, position, size, onClose, onUpdate }) {
+export default function StickyNote({ id, content, type, position, size, onClose, onUpdate, onSendToOBS }) {
   const [noteContent, setNoteContent] = useState(type === "markdown" ? "Loading..." : content);
 
   useEffect(() => {
@@ -46,6 +46,12 @@ export default function StickyNote({ id, content, type, position, size, onClose,
   console.log("📐 Note", id, "→ Pos:", position, "Size:", size);
   const fallbackPosition = position ?? { x: 100, y: 100 };
   const fallbackSize = size ?? { width: 240, height: 180 };
+
+  function handleSendToOBS(id) {
+    if (onSendToOBS) {
+      onSendToOBS(id);
+    }
+  }
 
   return (
     <Rnd
@@ -99,6 +105,23 @@ export default function StickyNote({ id, content, type, position, size, onClose,
           }}
         >
           ✕
+        </button>
+        {/* 🟦 Hamburger Menu: Top-left */}
+        <button
+          onClick={() => onSendToOBS?.(id)}
+          style={{
+            position: "absolute",
+            top: "4px",
+            left: "4px",
+            background: "transparent",
+            border: "none",
+            fontSize: "18px",
+            cursor: "pointer",
+            zIndex: 2
+          }}
+          title="Send to OBS"
+        >
+          ☰
         </button>
         <div style={{ width: "100%", height: "100%", overflow: "auto" }}>
           {type === "markdown"
