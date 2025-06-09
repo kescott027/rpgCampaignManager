@@ -321,6 +321,22 @@ class CombatDataHandler(RpgDatabase):
         }
 
 
+    def set_current_index(self, index: int):
+        conn = self.connect()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS turn_index (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                current_index INTEGER DEFAULT 0
+            );
+        """)
+        cursor.execute("INSERT OR IGNORE INTO turn_index (id, current_index) VALUES (1, 0)")
+        cursor.execute("UPDATE turn_index SET current_index = ? WHERE id = 1", (index,))
+        conn.commit()
+        conn.close()
+
+
 class CombatHandler:
 
     def __init__(self, source='Unknown'):
@@ -400,7 +416,6 @@ class CombatHandler:
         return len(entries)
 
 
-
     def change_initiative_slot(target_character, order):
         # get current initiative slot of target
 
@@ -408,7 +423,6 @@ class CombatHandler:
 
         # insert character back into initiative
         return
-
 
     def get_character_pool():
         return

@@ -11,7 +11,6 @@ export default function PanelManager({
                                        renderCharacterPanel,
                                        setInitiativeTab,
                                        setCharactersTab
-
                                      }) {
   const [showInitiative, setShowInitiative] = useState(false);
   const [initiativeDocked, setInitiativeDocked] = useState(false);
@@ -79,6 +78,19 @@ export default function PanelManager({
   }, [setInitiativeTab, setCharactersTab, filePath]);
   console.log("📊 initiativeQueue:", initiativeQueue);
 
+  const handleJumpToIndex = async (index) => {
+    try {
+      const response = await post("/api/combat/jump-to-index", { index });
+      if (response && response.scene) {
+        setCurrentIndex(index); // update local current turn
+        await post("/api/obs/set-scene", { scene: response.scene }); // tell OBS
+      }
+    } catch (err) {
+      console.error("Jump to index failed:", err);
+    }
+  };
+
+
   return (
     <>
       {/* Docked Buttons */}
@@ -111,7 +123,7 @@ export default function PanelManager({
       {showInitiative && renderInitiativePanel(false, {
         characters: initiativeQueue,
         currentIndex: currentIndex,
-
+        onJumpToIndex: handleJumpToIndex,
         onStartCombat: async (entries) => {
           const sorted = await startCombat(entries);
           setInitiativeQueue(sorted);

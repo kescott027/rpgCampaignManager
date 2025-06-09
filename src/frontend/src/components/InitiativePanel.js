@@ -8,7 +8,8 @@ import {
   FaEyeSlash,
   FaFolderOpen,
   FaSync,
-  FaEdit
+  FaEdit,
+  FaHandPointRight
 } from "react-icons/fa";
 
 export default function InitiativePanel({
@@ -21,7 +22,8 @@ export default function InitiativePanel({
                                           onHide,
                                           onTabView,
                                           onUpdate,
-                                          onRefresh
+                                          onRefresh,
+                                          onJumpToIndex
                                         }) {
   const [editingEntries, setEditingEntries] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
@@ -139,6 +141,21 @@ export default function InitiativePanel({
             paddingLeft: "4px"
           }}
         >
+          {/* ⏩ Jump Icon Button */}
+          <button
+            onClick={() => onJumpToIndex(index)}
+            title="Jump to this turn"
+            style={{
+              marginRight: "6px",
+              background: "none",
+              border: "none",
+              fontSize: "0.9rem",
+              cursor: "pointer",
+              color: "#666"
+            }}
+          >
+            <FaHandPointRight />
+          </button>
           {editMode && (
             <button onClick={() => removeEntry(index)}
                     style={{ marginRight: "4px", color: "red", background: "none", border: "none" }}>❌</button>

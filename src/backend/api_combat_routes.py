@@ -19,13 +19,13 @@ class InitiativeQueueUpdate(BaseModel):
 
 logging.basicConfig(level=logging.INFO)
 router = APIRouter()
-datahandler = CombatDataHandler()
+data_handler = CombatDataHandler()
 combat_handler = CombatHandler()
 
 @router.get("/api/combat/combat-queue")
 def fetch_combat_queue(include_inactive: bool = False):
     """Fetch current combat initiative queue."""
-    queue = datahandler.get_combat_queue(include_inactive)
+    queue = data_handler.get_combat_queue(include_inactive)
     return {"queue": queue}
 
 
@@ -39,7 +39,7 @@ async def load_combat_queue(request: Request):
         if not isinstance(entries, list):
             return {"error": "Invalid or missing 'entries' list"}
 
-        datahandler.load_combat_queue(entries)
+        data_handler.load_combat_queue(entries)
         return {"status": "✅ Combat queue loaded", "count": len(entries)}
 
     except Exception as e:
@@ -48,15 +48,15 @@ async def load_combat_queue(request: Request):
 
 @router.get("/api/combat/current-turn")
 def get_current_turn():
-    logging.debug(f"api_combat_routes: -> datahandler: get_current_turn")
-    return datahandler.get_current_turn() or {"error": "No active combat."}
+    logging.debug(f"api_combat_routes: -> data_handler: get_current_turn")
+    return data_handler.get_current_turn() or {"error": "No active combat."}
 
 
 @router.post("/api/combat/turn")
 def get_current_turn(data: dict):
     turn = data.get('turn', 0)
-    logging.debug(f"api_combat_routes: -> datahandler: set_initiative")
-    return datahandler.set_current_turn(turn)
+    logging.debug(f"api_combat_routes: -> data_handler: set_initiative")
+    return data_handler.set_current_turn(turn)
 
 
 @router.post("/api/combat/update-combat-queue")
@@ -69,3 +69,14 @@ def update_combat_queue(payload: InitiativeQueueUpdate):
     except Exception as e:
         logging.debug(f'update-combat-route failed to update DataHandler {e}')
         return { "error": str(e)}
+
+@router.post("/api/combat/jump-to-index")
+def jump_to_index(payload: dict):
+    index = payload.get("index")
+    if index is None:
+        return {"error": "Missing index"}
+
+    data_handler.set_current_index(index)
+
+    # Return the current turn so frontend can re-highlight and change OBS scene
+    return data_handler.get_current_turn()
