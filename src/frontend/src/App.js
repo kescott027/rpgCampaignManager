@@ -29,20 +29,22 @@ export default function App() {
   return (
     <div className="app-container">
       {showSidebar && <Sidebar onFileSelect={handleFileSelect} />}
+      {/* Sidebar Toggle Button — Always Visible */}
       <button
         onClick={() => setShowSidebar(prev => !prev)}
         title={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
         style={{
           position: "absolute",
-          left: showSidebar ? 260 : 0,  // offset when sidebar is visible
+          left: showSidebar ? 260 : 0,
           top: 10,
-          zIndex: 0,
+          zIndex: 1000,
           background: "#444",
           color: "#fff",
           border: "none",
           padding: "6px 10px",
-          borderRadius: "4px",
-          cursor: "pointer"
+          borderRadius: showSidebar ? "0 4px 4px 0" : "4px",
+          cursor: "pointer",
+          opacity: 0.8
           // pointerEvents: "none"
         }}
       >
