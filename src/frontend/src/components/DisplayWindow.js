@@ -189,34 +189,25 @@ export default function DisplayWindow({ filePath, initialTab = "Markdown", onFil
         console.log("✅ Parsed uploadData:", uploadData);
         const assetPath = uploadData.asset_path;
         console.log("✅ asset path:", assetPath);
-        const reader = new FileReader();
 
-        reader.onload = () => {
-          const id = Date.now();
-          const note = {
-            id,
-            type: type.startsWith("image") ? "image" : "markdown",
-            content: assetPath,
-            position: {
-              x: e.clientX - 200,
-              y: e.clientY - 180
-            },
-            size: { width: 240, height: 180 }
-          };
-          console.log("🧷 New sticky note data:", note);
-          setStickyNotes(prev => {
-            const updated = [...prev, note];
-            saveStickyNotes(currentLayout, updated);
-            console.log("Sticky note created:", note);
-            return updated;
-          });
+        const id = Date.now();
+        const note = {
+          id,
+          type: type.startsWith("image") ? "image" : "markdown",
+          content: assetPath,
+          position: {
+            x: e.clientX - 200,
+            y: e.clientY - 180
+          },
+          size: { width: 240, height: 180 }
         };
 
-        if (type.startsWith("image")) {
-          reader.readAsDataURL(file);  // Just to trigger reader.onload
-        } else if (type === "text/markdown" || type === "text/plain") {
-          reader.readAsText(file);
-        }
+        setStickyNotes(prev => {
+          const updated = [...prev, note];
+          saveStickyNotes(currentLayout, updated);
+          return updated;
+        });
+
       }
 
     } catch (err) {

@@ -76,7 +76,7 @@ export default function PanelManager({
         setCharactersTab(false);
       }
     }
-  }, [filePath]);
+  }, [setInitiativeTab, setCharactersTab, filePath]);
   console.log("📊 initiativeQueue:", initiativeQueue);
 
   return (
@@ -152,7 +152,7 @@ export default function PanelManager({
         },
 
         onUpdate: async (entries) => {
-          await post("/api/combat/update-combat-queue", entries);
+          await post("/api/combat/update-combat-queue", { entries });
           const data = await get("/api/combat/combat-queue");
           setInitiativeQueue(data.queue || []);
         }

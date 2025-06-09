@@ -102,7 +102,8 @@ class CombatDataHandler(RpgDatabase):
             scene TEXT,
             hp INTEGER,
             conditions TEXT DEFAULT '[]',
-            is_active BOOLEAN DEFAULT 1
+            is_active BOOLEAN DEFAULT 1,
+            sort_order INTEGER DEFAULT 0
         );
         """
 
@@ -113,9 +114,9 @@ class CombatDataHandler(RpgDatabase):
         """Fetch current combat queue from DB."""
 
         if include_inactive:
-            command = "SELECT name, initiative, scene, hp, conditions, is_active FROM combat_queue ORDER BY initiative DESC"
+            command = "SELECT name, initiative, scene, hp, conditions, is_active FROM combat_queue ORDER BY sort_order ASC"
         else:
-            command = "SELECT name, initiative, scene, hp, conditions FROM combat_queue WHERE is_active = 1 ORDER BY initiative DESC"
+            command = "SELECT name, initiative, scene, hp, conditions FROM combat_queue WHERE is_active = 1 ORDER BY sort_order ASC"
         try:
 
             initiative_queue = self.read(executable=command)
@@ -148,11 +149,15 @@ class CombatDataHandler(RpgDatabase):
         logging.debug(f' replace_queue deleting current combat_queue')
         self.write("DELETE FROM combat_queue")  # clear
         logging.debug(f' replace queue writing {entries}to replace_queue')
-        for entry in entries:
+        for index, entry in enumerate(entries):
+
+            if not isinstance(entry, dict):
+                entry = entry.dict()
+
             self.write(
                 """
-                INSERT INTO combat_queue (name, initiative, scene, hp, conditions, is_active)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO combat_queue (name, initiative, scene, hp, conditions, is_active, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     entry.get("name", ""),
@@ -160,7 +165,8 @@ class CombatDataHandler(RpgDatabase):
                     entry.get("scene", entry.get("name", "")),
                     entry.get("hp", 0),
                     json.dumps(entry.get("conditions", [])),
-                    1
+                    1,
+                    index
                 )
             )
 
@@ -169,8 +175,8 @@ class CombatDataHandler(RpgDatabase):
         self.write("DELETE FROM combat_queue")
 
         insert_cmd = """
-        INSERT INTO combat_queue (name, initiative, scene, hp, conditions, is_active)
-        VALUES (?, ?, ?, ?, ?, 1)
+        INSERT INTO combat_queue (name, initiative, scene, hp, conditions, is_active, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """
 
         for entry in entries:
@@ -179,7 +185,9 @@ class CombatDataHandler(RpgDatabase):
                 entry.get("initiative", 0),
                 entry.get("scene", entry.get("name")),
                 entry.get("hp", None),
-                json.dumps(entry.get("conditions", []))
+                json.dumps(entry.get("conditions", [])),
+                1,
+                index
             )
 
             self.write(insert_cmd, queue_insert)
@@ -217,7 +225,7 @@ class CombatDataHandler(RpgDatabase):
             SELECT name, initiative, scene, hp, conditions
             FROM combat_queue
             WHERE is_active = 1
-            ORDER BY initiative DESC
+            ORDER BY sort_order ASC
         """)
         queue = cursor.fetchall()
 
@@ -262,7 +270,7 @@ class CombatDataHandler(RpgDatabase):
             SELECT name, initiative, scene, hp, conditions
             FROM combat_queue
             WHERE is_active = 1
-            ORDER BY initiative DESC
+            ORDER BY sort_order ASC
         """)
         queue = cursor.fetchall()
         conn.close()
@@ -294,7 +302,7 @@ class CombatDataHandler(RpgDatabase):
             SELECT name, initiative, scene, hp, conditions
             FROM combat_queue
             WHERE is_active = 1
-            ORDER BY initiative DESC
+            ORDER BY sort_order ASC
         """)
         queue = cursor.fetchall()
         conn.close()
@@ -335,9 +343,9 @@ class CombatHandler:
         """Fetch current combat queue from DB."""
 
         if args == 'include_inactive':
-            command = "SELECT name, initiative, scene, hp, conditions, is_active FROM combat_queue ORDER BY initiative DESC"
+            command = "SELECT name, initiative, scene, hp, conditions, is_active FROM combat_queue ORDER BY sort_order ASC"
         else:
-            command = "SELECT name, initiative, scene, hp, conditions FROM combat_queue WHERE is_active = 1 ORDER BY initiative DESC"
+            command = "SELECT name, initiative, scene, hp, conditions FROM combat_queue WHERE is_active = 1 ORDER BY sort_order ASC"
 
         try:
 

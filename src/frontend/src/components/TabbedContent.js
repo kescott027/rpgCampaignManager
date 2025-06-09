@@ -2,6 +2,8 @@ import React from "react";
 import TabViewer from "./TabViewer";
 import InitiativePanel from "./InitiativePanel";
 import CharacterPanel from "./CharacterPanel";
+import { startCombat } from "../handlers/startCombatHandler";
+import { advanceTurn, reverseTurn } from "../handlers/turnHandlers";
 import ReactMarkdown from "react-markdown";
 
 
@@ -35,20 +37,31 @@ export default function TabbedContent({
     );
   });
 
-  // Add control panels and archive
   if (initiativeTab) {
     tabContent["Initiative"] = (
       <InitiativePanel
         onClose={() => setActiveTab(sceneTabs[0]?.label || "Archives")}
+        onStartCombat={async (entries) => {
+          const reloaded = await startCombat(entries);
+        }}
         onHide={() => {
         }}
         onTabView={() => {
+        }}
+        onNext={async () => {
+          const res = await fetch("/api/combat/combat-queue");
+          const queue = (await res.json()).queue;
+          await advanceTurn(queue, 0); // or use state
+        }}
+        onPrevious={async () => {
+          const res = await fetch("/api/combat/combat-queue");
+          const queue = (await res.json()).queue;
+          await reverseTurn(queue, 0);
         }}
       />
     );
   }
 
-  // Add Character Panel
   if (charactersTab) {
     tabContent["Characters"] = (
       <CharacterPanel

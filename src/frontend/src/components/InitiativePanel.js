@@ -54,6 +54,9 @@ export default function InitiativePanel({
     reordered.splice(dropIndex, 0, moved);
     setEditingEntries(reordered);
     setDragIndex(null);
+    if (onUpdate) {
+      onUpdate(reordered);
+    }
   };
 
   const addEntry = () => {

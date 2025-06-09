@@ -1,6 +1,21 @@
 import logging
 from fastapi import APIRouter, Request
 from src.backend.datahandler_combat import CombatDataHandler, CombatHandler
+from pydantic import BaseModel
+from typing import List, Optional
+
+
+class InitiativeEntry(BaseModel):
+    name: str
+    initiative: int
+    scene: Optional[str] = None
+    hp: Optional[int] = None
+    conditions: List[str] = []
+
+
+class InitiativeQueueUpdate(BaseModel):
+    entries: List[InitiativeEntry]
+
 
 logging.basicConfig(level=logging.INFO)
 router = APIRouter()
@@ -45,10 +60,11 @@ def get_current_turn(data: dict):
 
 
 @router.post("/api/combat/update-combat-queue")
-def update_combat_queue(data: dict):
-    logging.debug(f'update-combat-queue route calling DataHandler/update-combat-queue with{data}')
+def update_combat_queue(payload: InitiativeQueueUpdate):
+
+    logging.debug(f'update-combat-queue route calling DataHandler/update-combat-queue with{payload}')
     try:
-        result = combat_handler.update_combat_queue(data.get("entries", []))
+        result = combat_handler.update_combat_queue(payload.entries)
         return {"status": "✅ Combat queue updated", "count": result}
     except Exception as e:
         logging.debug(f'update-combat-route failed to update DataHandler {e}')

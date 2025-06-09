@@ -46,7 +46,7 @@ export default function CharacterPanel({ onClose, onHide, onTabView, onCommandRe
     }));
 
     try {
-      const result = await post("/api/combat/load-combat-queue", entries);
+      const result = await post("/api/combat/load-combat-queue", { entries });
       console.log("✅ Added to initiative:", result);
 
       // Show confirmation
