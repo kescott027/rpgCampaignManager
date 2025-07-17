@@ -3,8 +3,11 @@ import FileTree from "./FileTree";
 import GoogleLoginButton from "./GoogleLogin";
 import logo from "./images/logo.png";
 import { get } from "../utils/api";
+import AuthModal from "./AuthModal";
 
 export default function Sidebar({ onFileSelect }) {
+  const [showAuth, setShowAuth] = useState(false);
+  const [user, setUser] = useState(null);
   const [sessionActive, setSessionActive] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("darkMode") === "true";
@@ -94,7 +97,18 @@ export default function Sidebar({ onFileSelect }) {
         </button>
 
       </div>
-
+      {showAuth && (
+        <AuthModal
+          onClose={() => setShowAuth(false)}
+          onSuccess={(user) => {
+            setUser(user);
+            setShowAuth(false);
+          }}
+        />
+      )}
+      <button onClick={() => setShowAuth(true)}>
+        {user ? `Logged in as ${user.username}` : "🔐 Login"}
+      </button>
       <div className="section">
         <h4>⚔️ Assets</h4>
         <ul>

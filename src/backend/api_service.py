@@ -11,6 +11,7 @@ from .api_command_routes import router as command_router
 from .api_character_routes import router as character_router
 from .api_combat_routes import router as combat_router
 from .api_display_routes import router as display_router
+from .api_auth_routes import router as auth_routes
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -26,3 +27,4 @@ app.include_router(command_router)
 app.include_router(character_router)
 app.include_router(combat_router)
 app.include_router(display_router)
+app.include_router(auth_routes)
